@@ -57,7 +57,7 @@ class FinalProjectProgram():
             self.clientID, '%s_rightJoint' % self.bot_name, vrep.simx_opmode_oneshot_wait)
         _, self.bot=vrep.simxGetObjectHandle(
             self.clientID, self.bot_name, vrep.simx_opmode_oneshot_wait)
-        # proxSens = prox_sens_initialize(self.clientID)
+
         # initialize odom of bot
         _, self.xyz = vrep.simxGetObjectPosition(
             self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
@@ -83,11 +83,11 @@ class FinalProjectProgram():
             self.unittestTurnSideways(count)
             count += 1
 
-    def getRobotPose(self):
+    def getRobotPose(self, robot_handle):
         _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.bot, -1, vrep.simx_opmode_buffer)
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
         _, eulerAngles = vrep.simxGetObjectOrientation(
-            self.clientID, self.bot, -1, vrep.simx_opmode_buffer)
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
         x, y, z = xyz
         theta = eulerAngles[2]
 
@@ -104,7 +104,7 @@ class FinalProjectProgram():
         self.setMotorVelocities(forward_vel=1, omega=0)
 
     def unittestTurnSideways(self, not_first_time):
-        x, y, theta = self.getRobotPose()
+        x, y, theta = self.getRobotPose(self.bot)
         if not_first_time:
             goal_theta = self.first_theta + np.pi / 2
             print goal_theta
