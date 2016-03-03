@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt #used for image plotting
 import signal
 
 from idash import IDash
-from robot_helpers import vomega2bytecodes
+from robot_helpers import vomega2bytecodes, ThetaRange
+from plot_helpers import plotVector
 
 class GracefulKiller:
     kill_now = False
@@ -24,12 +25,12 @@ class FinalProjectProgram():
         self.bot_name = '%s%d' % (color, number)
 
         # run startup methods
-        self.initialize_vrep_client()
-        self.initilize_vrep_api()
+        self.initializeVrepClient()
+        self.initializeVrepApi()
         self.killer = GracefulKiller()
         self.idash = IDash(framerate=0.05)
 
-    def initialize_vrep_client(self):
+    def initializeVrepClient(self):
         #Initialisation for Python to connect to VREP
         print 'Python program started'
         count = 0
@@ -48,7 +49,7 @@ class FinalProjectProgram():
             print 'Failed connecting to V-REP'
             vrep.simxFinish(self.clientID)
 
-    def initilize_vrep_api(self):
+    def initializeVrepApi(self):
         # initialize bot handles and variables
         _, self.leftMotor=vrep.simxGetObjectHandle(
             self.clientID, '%s_leftJoint' % self.bot_name, vrep.simx_opmode_oneshot_wait)
@@ -58,10 +59,10 @@ class FinalProjectProgram():
             self.clientID, self.bot_name, vrep.simx_opmode_oneshot_wait)
         # proxSens = prox_sens_initialize(self.clientID)
         # initialize odom of bot
-        # _, self.xyz = vrep.simxGetObjectPosition(
-        #     self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
-        # _, self.eulerAngles = vrep.simxGetObjectOrientation(
-        #     self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+        _, self.xyz = vrep.simxGetObjectPosition(
+            self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+        _, self.eulerAngles = vrep.simxGetObjectOrientation(
+            self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
 
         # # initialize overhead cam
         # _, self.overheadCam=vrep.simxGetObjectHandle(
@@ -75,20 +76,53 @@ class FinalProjectProgram():
         # _, self.goalPose = vrep.simxGetObjectPosition(
         #     self.clientID, self.goalHandle, -1, vrep.simx_opmode_streaming)
 
-    def robot_code(self):
+    def robotCode(self):
         """ OUR ROBOT CODE GOES HERE """
+        count = 0
         while True:
-            self.unittest_move_forward()
+            self.unittestTurnSideways(count)
+            count += 1
 
-    def unittest_move_forward(self):
-        forward_vel = 1
-        omega = 0
+    def getRobotPose(self):
+        _, xyz = vrep.simxGetObjectPosition(
+            self.clientID, self.bot, -1, vrep.simx_opmode_buffer)
+        _, eulerAngles = vrep.simxGetObjectOrientation(
+            self.clientID, self.bot, -1, vrep.simx_opmode_buffer)
+        x, y, z = xyz
+        theta = eulerAngles[2]
+
+        return (x, y, theta)
+
+    def setMotorVelocities(self, forward_vel, omega):
         ctrl_sig_left, ctrl_sig_right = vomega2bytecodes(forward_vel, omega, g=1)
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.leftMotor,ctrl_sig_left,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
 
+    def unittestMoveForward(self):
+        self.setMotorVelocities(forward_vel=1, omega=0)
+
+    def unittestTurnSideways(self, not_first_time):
+        x, y, theta = self.getRobotPose()
+        if not_first_time:
+            goal_theta = self.first_theta + np.pi / 2
+            print goal_theta
+            error_theta = ThetaRange.angleDiff(theta, goal_theta)
+
+            # control
+            omega = 10 * error_theta
+            print omega
+            self.setMotorVelocities(0, omega)
+
+            # visualization
+            def plotCurrentDesiredHeadings():
+                plotVector(ThetaRange.pol2cart(1, theta), 'k')
+                plotVector(ThetaRange.pol2cart(1, goal_theta), 'r')
+            self.idash.add(plotCurrentDesiredHeadings)
+            self.idash.plotframe()
+        else:
+            self.first_theta = theta
 
     def clean_exit(self):
         _ = vrep.simxStopSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
@@ -98,7 +132,7 @@ class FinalProjectProgram():
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
-            self.robot_code()
+            self.robotCode()
 
         self.clean_exit()
 
