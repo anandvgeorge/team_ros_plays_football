@@ -8,4 +8,4 @@
 
 ## Running the code
 
-Of course you must have vrep running. On way to get the remote API started when you boot vrep can be seen in `go.sh`.  This file currently has my (Ryan's) hardcoded path.  Sorry about that!  I will run the `go.sh` command to get both the vrep server running and the client connecting, so the simulation runs without need for pressing any play buttons! Pretty untested for Windows!
+Of course you must have vrep running. On way to get the remote API started when you boot vrep can be seen in `run_question1.sh` (please make different run scripts with similar structure for the remaining questions).  This file currently has my (Ryan's) hardcoded path.  Sorry about that!  I will run the `go.sh` command to get both the vrep server running and the client connecting, so the simulation runs without need for pressing any play buttons! Pretty untested for Windows!
