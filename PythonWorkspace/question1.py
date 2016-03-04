@@ -83,6 +83,9 @@ class FinalProjectProgram():
             self.unittestTurnSideways(count)
             count += 1
 
+            if self.killer.kill_now:
+                self.clean_exit()
+
     def getRobotPose(self, robot_handle):
         _, xyz = vrep.simxGetObjectPosition(
             self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
