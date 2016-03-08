@@ -1,7 +1,3 @@
-"""
-Good job Lukas, first attempt
-"""
-
 import vrep #import library for VREP API
 import time
 import math
@@ -10,7 +6,7 @@ import matplotlib.pyplot as plt #used for image plotting
 import signal
 
 from idash import IDash
-from robot_helpers import vomega2bytecodes, ThetaRange
+from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -118,61 +114,85 @@ class FinalProjectProgram():
         else:
             xSaving = xGoalie - goalieDistance
             
-        # savingPosition = [xSaving, yGoalie, z] # position in which the the goalie saves the ball
+        savingPosition = [xSaving, yGoalie, z] # position in which the the goalie saves the ball
         
-        desiredHeading = -math.pi/2
-        tolerance = 5*math.pi/360
-        error = []
-        Kp = 2
-        Tdiff = 0.01
-        Tint = 0.1
-        Tsample = 0.02
-        i = 0
-        
-        while ((thetaGoalie < (desiredHeading - tolerance) or thetaGoalie > (desiredHeading + tolerance))) and i <= 20:
-                error.append(abs(thetaGoalie - desiredHeading))
-                if i == 0:
-                    vDiff = Kp*error[i]
-                else:
-                    errorSum = 0
-                    for j in range(i):
-                        errorSum += error[j]
-                    vDiff = Kp*(error[i] + Tdiff/Tsample*(error[i] - error[i-1]) + Tsample*Tint*errorSum)
-                _ = vrep.simxSetJointTargetVelocity(
-                    self.clientID,self.leftMotor,-vDiff,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
-                _ = vrep.simxSetJointTargetVelocity(
-                    self.clientID,self.rightMotor,vDiff,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
-                time.sleep(Tsample)
-                thetaGoalie = self.getRobotPose(self.bot)[2]
-                #print thetaGoalie
-                i += 1
-        
-        xTolerance = 0.0001
-        error = []
-        i = 0
-        Kp = 100
-        Tint = 1
-        Tsample = 0.01
-    
-        while ((xGoalie < (xSaving - xTolerance) or xGoalie > (xSaving + xTolerance))) and i <= 25:
-            error.append(xGoalie - xSaving)
-            if i == 0:
-                vComm = Kp*error[i]
-            else:
-                errorSum = 0
-                for j in range(i):
-                    errorSum += error[j]
-                vComm = Kp*(error[i] + Tdiff/Tsample*(error[i] - error[i-1]) + Tsample*Tint*errorSum)
-            _ = vrep.simxSetJointTargetVelocity(
-                self.clientID,self.leftMotor,-vComm,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
-            _ = vrep.simxSetJointTargetVelocity(
-                self.clientID,self.rightMotor,-vComm,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
-            time.sleep(Tsample)
-            xGoalie = self.getRobotPose(self.bot)[0]
-            #print xGoalie
-            i += 1
-
+#        desiredHeading = -math.pi/2
+#        tolerance = 5*math.pi/360
+#        error = []
+#        Kp = 2
+#        Tdiff = 0.01
+#        Tint = 0.1
+#        Tsample = 0.02
+#        i = 0
+#        
+#        while ((thetaGoalie < (desiredHeading - tolerance) or thetaGoalie > (desiredHeading + tolerance))) and i <= 20:
+#                error.append(abs(thetaGoalie - desiredHeading))
+#                if i == 0:
+#                    vDiff = Kp*error[i]
+#                else:
+#                    errorSum = 0
+#                    for j in range(i):
+#                        errorSum += error[j]
+#                    vDiff = Kp*(error[i] + Tdiff/Tsample*(error[i] - error[i-1]) + Tsample*Tint*errorSum)
+#                _ = vrep.simxSetJointTargetVelocity(
+#                    self.clientID,self.leftMotor,-vDiff,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
+#                _ = vrep.simxSetJointTargetVelocity(
+#                    self.clientID,self.rightMotor,vDiff,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+#                time.sleep(Tsample)
+#                thetaGoalie = self.getRobotPose(self.bot)[2]
+#                #print thetaGoalie
+#                i += 1
+#        
+#        xTolerance = 0.0001
+#        error = []
+#        i = 0
+#        Kp = 100
+#        Tint = 1
+#        Tsample = 0.01
+#    
+#        while ((xGoalie < (xSaving - xTolerance) or xGoalie > (xSaving + xTolerance))) and i <= 25:
+#            error.append(xGoalie - xSaving)
+#            if i == 0:
+#                vComm = Kp*error[i]
+#            else:
+#                errorSum = 0
+#                for j in range(i):
+#                    errorSum += error[j]
+#                vComm = Kp*(error[i] + Tdiff/Tsample*(error[i] - error[i-1]) + Tsample*Tint*errorSum)
+#            _ = vrep.simxSetJointTargetVelocity(
+#                self.clientID,self.leftMotor,-vComm,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
+#            _ = vrep.simxSetJointTargetVelocity(
+#                self.clientID,self.rightMotor,-vComm,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+#            time.sleep(Tsample)
+#            xGoalie = self.getRobotPose(self.bot)[0]
+#            #print xGoalie
+#            i += 1
+            
+        while 1:      
+            robotConf = self.getRobotConf(self.bot)
+            print('robotConf.x=%f' % robotConf[0])
+            print('robotConf.y=%f' % robotConf[1])
+            print('robotConf.theta=%f' % robotConf[2])
+            print('savingPosition.x=%f' % savingPosition[0])
+            print('savingPosition.y=%f' % savingPosition[1]) 
+            print('savingPosition.theta=%f' % savingPosition[2])
+            vRobot = v2Pos(robotConf, savingPosition)
+            print('vRobot.x=%f' % vRobot[0])
+            print('vRobot.y=%f' % vRobot[1]) 
+            self.setMotorVelocities(vRobot[0], vRobot[1])
+            #self.setDriveVelocities(0, 0)
+            
         time.sleep(3)
+        
+    def getRobotConf(self, robot_handle):
+        _, xyz = vrep.simxGetObjectPosition(
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+        _, eulerAngles = vrep.simxGetObjectOrientation(
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+        x, y, z = xyz
+        theta = eulerAngles[2]
+
+        return (x, y, theta)
 
     def getRobotPose(self, robot_handle):
         _, xyz = vrep.simxGetObjectPosition(
