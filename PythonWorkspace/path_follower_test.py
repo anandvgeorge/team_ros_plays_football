@@ -119,7 +119,7 @@ class FinalProjectProgram():
             vRobot = v2Pos(robotConf, ballPos)
             print('vRobot.x=%f' % vRobot[0])
             print('vRobot.y=%f' % vRobot[1]) 
-            self.setDriveVelocities(vRobot[0], vRobot[1])
+            self.setMotorVelocities(vRobot[0], vRobot[1])
             #self.setDriveVelocities(0, 0)
         time.sleep(3)
 
@@ -145,14 +145,6 @@ class FinalProjectProgram():
             self.clientID,self.leftMotor,ctrl_sig_left,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
-
-    def setDriveVelocities(self, vf, vt):
-        vl = vf/2 + vt/5	# vf = vl + vr
-        vr = vf/2 - vt/5
-        _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.leftMotor,vl,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
-        _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.rightMotor,vr,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
 
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
