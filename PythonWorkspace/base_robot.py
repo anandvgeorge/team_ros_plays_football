@@ -124,7 +124,7 @@ class BaseRobotRunner(object):
         """ velocity of the robot, radius of the buffer zone 
         """
         robotpos = np.array(robotConf)[0:2]        
-        while self.path.shape[0]>1 and np.linalg.norm(robotpos - self.path[:,0])<r :
+        while self.path.shape[1]>1 and np.linalg.norm(robotpos - self.path[:,0])<r :
             self.path = self.path[:, 1:]  # remove first node
         vRobot = v2Pos(robotConf, self.path[:,0])   
         self.setMotorVelocities(vRobot[0], vRobot[1])
