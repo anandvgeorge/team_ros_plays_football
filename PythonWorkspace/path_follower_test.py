@@ -26,7 +26,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
                               [0.4, -0.4, -0.4, 0.4]])
         while 1:
             robotConf = self.getRobotConf(self.bot)            
-            self.followPath(robotConf, 20, 0.02)
+            self.followPath(robotConf)        
 #                robotConf = self.getRobotConf(self.bot)
 #                print('robotConf.x=%f' % robotConf[0])
 #                print('robotConf.y=%f' % robotConf[1])
