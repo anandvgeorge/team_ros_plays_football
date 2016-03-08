@@ -3,4 +3,5 @@ repo for Team ROS to design its robot soccer / football algorithms for the Distr
 Romain Chiappinelli
 Ryan Louie
 Lukas Brunke
-
+ 
+Using the command line! Whoop Whoop!
