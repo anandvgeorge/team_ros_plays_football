@@ -120,7 +120,7 @@ class BaseRobotRunner(object):
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
             
-    def followPath(self, robotConf, v = 20, r=0.015):
+    def followPath(self, robotConf, v = 20, r=0.02):
         """ velocity of the robot, radius of the buffer zone 
         """
         robotpos = np.array(robotConf)[0:2]        
@@ -168,6 +168,11 @@ class BaseRobotRunner(object):
 
         self.clean_exit()
 
+    def displayPath(self):
+        print('path=')
+        for i in range(0, self.path.shape[1]):
+            print('%f, %f' % (self.path[0, i], self.path[1, i]))
+    
 
 if __name__ == '__main__':
     class MyRobotRunner(BaseRobotRunner):

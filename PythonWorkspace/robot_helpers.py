@@ -1,6 +1,7 @@
 import vrep
 import math
 import numpy as np
+# https://docs.scipy.org/doc/numpy-dev/user/numpy-for-matlab-users.html
 import matplotlib.pyplot as plt
 
 def prox_sens_initialize(clientID):
@@ -70,7 +71,52 @@ def v2Pos(robotConf, finalPos, v = 20, k=2.5):
     rvt = -cos*vx-sin*vy   # robot forward velocity
     rvf = -sin*vx+cos*vy   # robot translational velocity ~~> ohmega
     return (rvf, k*rvt)   # robot velocity (forward, transaltional)
+
+def smoothPath(robotConf, finalConf, r=0.1, q=0.1, theta=math.pi/10):
+    """ inital configuration of the robot, final Configuration of the robot
+        radius of arc for path and distance q for a staight line to the final pos
+        theta is the angle to set the number of point on the circle arc
+        see figure in lecture 4 locomotion
+    """
+    tol = .0001
+    cos = math.cos(finalConf[2]) 
+    sin = math.sin(finalConf[2])  
+    g = np.array([[finalConf[0]],       # goal
+                  [finalConf[1]]])
+    t = g-np.array([[q*cos],        # last point on the circle
+                    [q*sin]])
+    c1 = t+np.array([[-r*sin],      # center of the circle1 
+                     [r*cos]])
+    c2 = t-np.array([[-r*sin],      # center of the circle2
+                     [r*cos]]) 
+    s = np.array([[robotConf[0]],       # start: robot position
+                  [robotConf[1]]])  
+    if (np.linalg.norm(s-c1) < np.linalg.norm(s-c2)):
+        c = c1  # choose the circle the closest to the robot 
+        gamma = -math.pi/2   # anticlockwise
+    else:
+        c = c2
+        gamma = math.pi/2  # clockwise
+    b1 = np.arctan2(c[1,0]-s[1,0], c[0,0]-s[0,0])   # atan2(y, x)   
+    path = np.concatenate((t, g), axis=1)
+    if np.linalg.norm(s-c)<r+tol:   # robot inside the circle, no solution
+        return path
+    d = np.linalg.norm(s-c)    
+    b2 = np.arcsin(r/d)
+    p = c+np.array([[r*np.cos(b1+b2+gamma)],    # first point on the circle
+                  [r*np.sin(b1+b2+gamma)]])           
+    n = np.ceil(np.fabs((finalConf[2]-b1-b2)/theta)) # nb of point on the circle   
+    sgnG = np.sign(gamma)    
+    for i in np.arange(theta, n*theta, theta):  
+        p = np.concatenate((p, np.array([[c[0,0]+r*np.cos(b1+b2+gamma-i*sgnG)], # point on the circle
+                                         [c[1,0]+r*np.sin(b1+b2+gamma-i*sgnG)]])), axis=1)
+    path = np.concatenate((s, p, path), axis=1)                            
+#    path = np.append(s, path) 
+
+    return path
     
+    
+                    
 class ThetaRange(object):
     """ Class to organize methods related to shifts and transformations of Theta or Angles """
 
