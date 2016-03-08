@@ -37,7 +37,7 @@ class BaseRobotRunner(object):
         # run startup methods
         self.initializeVrepClient()
         self.initializeVrepApi()
-        self.killer = GracefulKiller()
+        #self.killer = GracefulKiller()
         self.idash = IDash(framerate=0.05)
 
     def initializeVrepClient(self):
@@ -119,6 +119,15 @@ class BaseRobotRunner(object):
             self.clientID,self.leftMotor,ctrl_sig_left,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+            
+    def followPath(self, robotConf, v = 20, r=0.01):
+        """ velocity of the robot, radius of the buffer zone 
+        """
+        robotpos = np.array(robotConf)[0:2]        
+        while self.path.shape[0]>1 and np.linalg.norm(robotpos - self.path[:,0])<r :
+            self.path = self.path[:, 1:]  # remove first node
+        vRobot = v2Pos(robotConf, self.path[:,0])   
+        self.setMotorVelocities(vRobot[0], vRobot[1])
 
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
@@ -164,19 +173,24 @@ if __name__ == '__main__':
             super(MyRobotRunner, self).__init__(*args, **kwargs)
 
         def robotCode(self):
+            
+            self.path = np.array([[0.3, 0.3, -0.3, -0.3],
+                                  [0.4, -0.4, -0.4, 0.4]])
             while 1:
-                robotConf = self.getRobotConf(self.bot)
-                print('robotConf.x=%f' % robotConf[0])
-                print('robotConf.y=%f' % robotConf[1])
-                print('robotConf.theta=%f' % robotConf[2])
-                ballPos = self.getBallPose() # (x, y)
-                print('ballPos.x=%f' % ballPos[0])
-                print('ballPos.y=%f' % ballPos[1])
-                vRobot = v2Pos(robotConf, ballPos)
-                print('vRobot.x=%f' % vRobot[0])
-                print('vRobot.y=%f' % vRobot[1])
-                self.setMotorVelocities(vRobot[0], vRobot[1])
-            time.sleep(3)
+                robotConf = self.getRobotConf(self.bot)            
+                self.followPath(robotConf)
+#                robotConf = self.getRobotConf(self.bot)
+#                print('robotConf.x=%f' % robotConf[0])
+#                print('robotConf.y=%f' % robotConf[1])
+#                print('robotConf.theta=%f' % robotConf[2])
+#                ballPos = self.getBallPose() # (x, y)
+#                print('ballPos.x=%f' % ballPos[0])
+#                print('ballPos.y=%f' % ballPos[1])
+#                vRobot = v2Pos(robotConf, ballPos)
+#                print('vRobot.x=%f' % vRobot[0])
+#                print('vRobot.y=%f' % vRobot[1])
+#                self.setMotorVelocities(vRobot[0], vRobot[1])
+#            time.sleep(3)
 
     obj = MyRobotRunner('Blue', 1)
     obj.run()
