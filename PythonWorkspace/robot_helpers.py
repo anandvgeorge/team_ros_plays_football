@@ -50,10 +50,12 @@ def vomega2bytecodes(v, omega, g, L=0.260):
     ctrl_sig_right = (v_comm + v_diff) / float(g)
     return ctrl_sig_left, ctrl_sig_right
 
-def v2Pos(robotConf, finalPos, v = 20):
+def v2Pos(robotConf, finalPos, v = 20, k=2.5):
     """ return a velocity vector to achieve the 
         given desired final position: finalPos[0]=x, finalPos[1]=y 
-        robotConf[0]=x, robotConf[1]=y, robotConf[2]=theta """
+        robotConf[0]=x, robotConf[1]=y, robotConf[2]=theta 
+        v is the absolute velocity of the robot and 
+        k is the rotation gain """
     x = finalPos[0] - robotConf[0]
     y = finalPos[1] - robotConf[1]
     norm = (x**2 + y**2)**.5
@@ -65,9 +67,9 @@ def v2Pos(robotConf, finalPos, v = 20):
     # transformation to robot frame
     cos = math.cos(robotConf[2]) # robot orientation unique vector
     sin = math.sin(robotConf[2])
-    rvt = cos*vx+sin*vy   # robot forward velocity
+    rvt = -cos*vx-sin*vy   # robot forward velocity
     rvf = -sin*vx+cos*vy   # robot translational velocity ~~> ohmega
-    return (rvf, rvt)   # robot velocity (forward, transaltional)
+    return (rvf, k*rvt)   # robot velocity (forward, transaltional)
     
 class ThetaRange(object):
     """ Class to organize methods related to shifts and transformations of Theta or Angles """
