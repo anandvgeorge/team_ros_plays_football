@@ -1,4 +1,4 @@
-# Working with the PythonWorkspace
+# Working with the PythonWorkspace 
 
 ## File Organization
 - `idash.py` is a small class that provides an interactive plotting dashboard!

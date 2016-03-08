@@ -147,7 +147,7 @@ class FinalProjectProgram():
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
 
     def setDriveVelocities(self, vf, vt):
-        vl = vf/2 + vt/5
+        vl = vf/2 + vt/5	# vf = vl + vr
         vr = vf/2 - vt/5
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.leftMotor,vl,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
