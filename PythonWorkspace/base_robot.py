@@ -40,6 +40,14 @@ class BaseRobotRunner(object):
         #self.killer = GracefulKiller()
         self.idash = IDash(framerate=0.05)
 
+    def exploreClassAttributes(self):
+        for variable_name, variable_value in self.__dict__.iteritems():
+            locals()["self_" + variable_name] = variable_value
+        # delete so there are no duplicate variables in the variable explorer
+        del(variable_name)
+        del(variable_value)
+        return # Place Spyder Breakpoint on this Line!
+
     def initializeVrepClient(self):
         #Initialisation for Python to connect to VREP
         print 'Python program started'
