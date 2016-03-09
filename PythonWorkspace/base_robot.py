@@ -123,13 +123,13 @@ class BaseRobotRunner(object):
     def followPath(self, robotConf, v = 20, r=0.05):
         """ velocity of the robot, radius of the buffer zone 
         """
-        robotpos = np.array(robotConf)[0:2]        
+        robotpos = np.array(robotConf)[0:2]
         while self.path.shape[1]>1 and np.linalg.norm(robotpos - self.path[:,0])<r :
             self.path = self.path[:, 1:]  # remove first node
         if self.path.shape[1]==1 and np.linalg.norm(robotpos - self.path[:,0])<r :
             self.setMotorVelocities(0, 0)
         else:
-            vRobot = v2Pos(robotConf, self.path[:,0])   
+            vRobot = v2Pos(robotConf, self.path[:,0])
             self.setMotorVelocities(vRobot[0], vRobot[1])
 
     def unittestMoveForward(self):
