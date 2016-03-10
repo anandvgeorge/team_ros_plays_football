@@ -10,6 +10,7 @@ import math
 import numpy as np #array library
 import matplotlib.pyplot as plt #used for image plotting
 import signal
+import threading
 
 from idash import IDash
 from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos
@@ -29,27 +30,45 @@ class GracefulKiller:
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, color, number):
+    def __init__(self, color, number, clientID=None):
+        """
+        color: i.e. 'Blue'
+        number: i.e. 1
+        clientID: Default None; if provided as parameter,
+            `vrep.simxStart` was called outside this class
+        """
         # parameter init
         self.bot_name = '%s%d' % (color, number)
         self.bot_nameStriker = 'Red1'
 
         # run startup methods
-        self.initializeVrepClient()
+        if clientID is not None:
+            # Use existing clientID (multi robot case)
+            self.clientID = clientID
+            self.multirobots = True
+            print("ClientID obtained as parameter! (Probably doing Multirobots...)")
+        else:
+            # Make connection to VREP client (single robot case)
+            self.initializeVrepClient()
+            self.multirobots = False
         self.initializeVrepApi()
         #self.killer = GracefulKiller()
         self.idash = IDash(framerate=0.05)
 
     def exploreClassAttributes(self):
         for variable_name, variable_value in self.__dict__.iteritems():
-            locals()["self_" + variable_name] = variable_value
+            locals()[self.bot_name + "_" + variable_name] = variable_value
         # delete so there are no duplicate variables in the variable explorer
         del(variable_name)
         del(variable_value)
         return # Place Spyder Breakpoint on this Line!
 
     def initializeVrepClient(self):
-        #Initialisation for Python to connect to VREP
+        """ Initialization for Python to connect to VREP.
+        We obtain a clientID after connecting to VREP, which is saved to
+            `self.clientID`
+        This method is only called if we controlling one robot with the remote API
+        """
         print 'Python program started'
         count = 0
         num_tries = 10
@@ -85,6 +104,8 @@ class BaseRobotRunner(object):
         _, self.eulerAngles = vrep.simxGetObjectOrientation(
             self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
 
+        # FIXME: striker handles shouldn't be part of the default base class
+        # FIXME: should be better way to have information regarding all the bots (Central Control?) (Publishers/Subscribers...)?
         # initialize bot handles and variables for Red1
         _, self.leftMotorStriker=vrep.simxGetObjectHandle(
             self.clientID, '%s_leftJoint' % self.bot_name, vrep.simx_opmode_oneshot_wait)
@@ -127,9 +148,9 @@ class BaseRobotRunner(object):
             self.clientID,self.leftMotor,ctrl_sig_left,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
-            
+
     def followPath(self, robotConf, v = 20, r=0.05):
-        """ velocity of the robot, radius of the buffer zone 
+        """ velocity of the robot, radius of the buffer zone
         """
         robotpos = np.array(robotConf)[0:2]
         while self.path.shape[1]>1 and np.linalg.norm(robotpos - self.path[:,0])<r :
@@ -171,16 +192,73 @@ class BaseRobotRunner(object):
 
     def run(self):
         if self.clientID!=-1:
-            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            if not self.multirobots:
+                # Start simulation if MultiRobotRunner not already starting it
+                _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
             self.robotCode()
 
-        self.clean_exit()
+        if not self.multirobots:
+            # Stop VREP simulation cleanly if MultiRobotRunner not already stopping it
+            self.clean_exit()
 
     def displayPath(self):
         print('path=')
         for i in range(0, self.path.shape[1]):
             print('%f, %f' % (self.path[0, i], self.path[1, i]))
-    
+
+class MultiRobotRunner(object):
+
+    def __init__(self):
+        # start vrep to obtain a self.clientID
+        self.initializeVrepClient()
+        self.bots = []
+
+    def initializeVrepClient(self):
+        #Initialisation for Python to connect to VREP
+        print 'Python program started from MultiRobotRunner'
+        count = 0
+        num_tries = 10
+        while count < num_tries:
+            vrep.simxFinish(-1) # just in case, close all opened connections
+            self.clientID=vrep.simxStart('127.0.0.1',19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            if self.clientID!=-1:
+                print 'Connected to V-REP'
+                break
+            else:
+                "Trying again in a few moments..."
+                time.sleep(3)
+                count += 1
+        if count >= num_tries:
+            print 'Failed connecting to V-REP'
+            vrep.simxFinish(self.clientID)
+
+    def clean_exit(self):
+        _ = vrep.simxStopSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+        vrep.simxFinish(self.clientID)
+        print 'Program ended'
+
+    def addRobot(self, instance):
+        self.bots.append(instance)
+
+    def run(self):
+        if self.clientID!=-1:
+            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            # Create threads for each
+            self.threads = []
+            for bot in self.bots:
+                # Robot Thread
+                t = threading.Thread(
+                      name="%sThread" % bot.bot_name
+                    , target=bot.robotCode)
+                t.setDaemon(True) # Require it to join!
+                self.threads.append(t)
+                t.start()
+                print("Started robotCode for %s" % bot.bot_name)
+
+        # Require threads to join before exiting
+        for t in self.threads:
+            t.join()
+        self.clean_exit()
 
 if __name__ == '__main__':
     class MyRobotRunner(BaseRobotRunner):
@@ -189,11 +267,11 @@ if __name__ == '__main__':
             super(MyRobotRunner, self).__init__(*args, **kwargs)
 
         def robotCode(self):
-            
+
             self.path = np.array([[0.3, 0.3, -0.3, -0.3],
                                   [0.4, -0.4, -0.4, 0.4]])
             while 1:
-                robotConf = self.getRobotConf(self.bot)            
+                robotConf = self.getRobotConf(self.bot)
                 self.followPath(robotConf)
 #                robotConf = self.getRobotConf(self.bot)
 #                print('robotConf.x=%f' % robotConf[0])
