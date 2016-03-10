@@ -1,13 +1,10 @@
 """For Question 2, the Robots must do a passing drill between the 4 zones
 of the playing field.
-
-This code relies on threads in Python, more which can be learned here:
-    https://pymotw.com/2/threading/"""
+"""
 
 import base_robot
 import numpy as np
 import time
-import threading
 
 class ZonePasser(base_robot.BaseRobotRunner):
 
@@ -30,7 +27,6 @@ class ZonePasser(base_robot.BaseRobotRunner):
             self.followPath(robotConf)
         print("%s finished" % self.bot_name)
 
-
 runner = base_robot.MultiRobotRunner()
 
 print "runnerClientID", runner.clientID
@@ -47,30 +43,3 @@ bot3.add_zone_destination(3)
 runner.addRobot(bot3)
 
 runner.run()
-
-# def bot1Thread():
-#     """thread function to handle all bot1's tasks"""
-#     bot.run()
-#     return
-
-# def bot2Thread():
-#     """thread function to handle all bot2's tasks"""
-#     time.sleep(1) # let the first robot go
-#     bot.run()
-#     return
-
-# def bot3Thread():
-#     """thread function to handle all bot3's tasks"""
-#     time.sleep(2) # let the first two robots go
-#     bot.run()
-#     return
-
-# b1 = threading.Thread(name='bot1', target=bot1Thread)
-# b2 = threading.Thread(name='bot2', target=bot2Thread)
-# b3 = threading.Thread(name='bot3', target=bot3Thread)
-
-# b1.start()
-# b2.start()
-# b3.start()
-
-

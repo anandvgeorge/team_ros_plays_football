@@ -30,7 +30,7 @@ class GracefulKiller:
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, color, number, clientID=None):
+    def __init__(self, color, number, clientID=None, ip='127.0.0.1'):
         """
         color: i.e. 'Blue'
         number: i.e. 1
@@ -38,6 +38,7 @@ class BaseRobotRunner(object):
             `vrep.simxStart` was called outside this class
         """
         # parameter init
+        self.ip = ip
         self.bot_name = '%s%d' % (color, number)
         self.bot_nameStriker = 'Red1'
 
@@ -74,7 +75,7 @@ class BaseRobotRunner(object):
         num_tries = 10
         while count < num_tries:
             vrep.simxFinish(-1) # just in case, close all opened connections
-            self.clientID=vrep.simxStart('127.0.0.1',19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            self.clientID=vrep.simxStart(self.ip,19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
             if self.clientID!=-1:
                 print 'Connected to V-REP'
                 break
@@ -186,7 +187,6 @@ class BaseRobotRunner(object):
             self.first_theta = theta
 
     def clean_exit(self):
-        _ = vrep.simxStopSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
         vrep.simxFinish(self.clientID)
         print 'Program ended'
 
@@ -207,9 +207,26 @@ class BaseRobotRunner(object):
             print('%f, %f' % (self.path[0, i], self.path[1, i]))
 
 class MultiRobotRunner(object):
+    """
+    MultiRobotRunner implements similar methods to BaseRobotRunner for the
+    starting, running, and exiting of VREP robots.
 
-    def __init__(self):
+    Using the addRobot method, one can add BaseRobotRunners to the
+    MultiRobotRunner.
+
+    MultiRobotRunner in its `run` method will create separate threads for the
+    different robot's `robotCode` methods.
+
+    It will then wait until all threads have finished before exiting
+
+
+    This code relies on threads in Python, more which can be learned here:
+    https://pymotw.com/2/threading/
+    """
+
+    def __init__(self, ip='127.0.0.1'):
         # start vrep to obtain a self.clientID
+        self.ip = ip
         self.initializeVrepClient()
         self.bots = []
 
@@ -220,7 +237,7 @@ class MultiRobotRunner(object):
         num_tries = 10
         while count < num_tries:
             vrep.simxFinish(-1) # just in case, close all opened connections
-            self.clientID=vrep.simxStart('127.0.0.1',19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            self.clientID=vrep.simxStart(self.ip,19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
             if self.clientID!=-1:
                 print 'Connected to V-REP'
                 break
@@ -233,7 +250,6 @@ class MultiRobotRunner(object):
             vrep.simxFinish(self.clientID)
 
     def clean_exit(self):
-        _ = vrep.simxStopSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
         vrep.simxFinish(self.clientID)
         print 'Program ended'
 
