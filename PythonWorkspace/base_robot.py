@@ -276,6 +276,33 @@ class MultiRobotRunner(object):
             t.join()
         self.clean_exit()
 
+class MultiRobotCyclicExecutor(MultiRobotRunner):
+    """Like the MultiRobotRunner, with the following changes:
+
+    - Cyclic executor is used rather than threads
+    - bot.robotCode method should be a run method that returns
+      in a small amount of time (Should not be a while loop)
+    """
+    def __init__(self, *args, **kwargs):
+        super(MultiRobotCyclicExecutor, self).__init__(*args, **kwargs)
+
+    def run(self):
+        """ Run method is a Cyclic Exectuor.
+        robots that are added with `addRobot` should have method
+        `robotCode` which returns in a small amount of time
+
+        If you desire high level planner control, use the structure
+        as a template.
+        """
+        if self.clientID!=-1:
+            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            t0 = time.time()
+            while True:
+                for bot in self.bots:
+                    bot.robotCode()
+
+        self.clean_exit()
+
 if __name__ == '__main__':
     class MyRobotRunner(BaseRobotRunner):
 
