@@ -30,18 +30,18 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #        dash.add(plt)
         
         
-        goal = (0, -0.7)
+        goal = (0, -0.8)
         ballPos = self.getBallPose()
         theta = math.atan2(goal[1]-ballPos[1], goal[0]-ballPos[0])   # atan2(y, x)   
         finalConf = (ballPos[0], ballPos[1], theta)   
         print('finalConf.x=%f' % finalConf[0])
         print('finalConf.y=%f' % finalConf[1])
         print('finalConf.theta=%f' % finalConf[2])
-        self.path = smoothPath(self.getRobotConf(self.bot), finalConf)
+        self.path = smoothPath(self.getRobotConf(self.bot), finalConf, 0.05, 0.05)
         print self.path
         while 1:
             robotConf = self.getRobotConf(self.bot)            
-            self.followPath(robotConf)        
+            self.followPath(robotConf, 10, 0.05)        
             robotConf = self.getRobotConf(self.bot)
             ballPos = self.getBallPose() # (x, y)
             vRobot = v2Pos(robotConf, ballPos)
