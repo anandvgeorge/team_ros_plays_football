@@ -1,0 +1,6 @@
+git pull
+	git add --all
+	git commit -m "message"
+or
+	git commit -am "mesage"
+git push
