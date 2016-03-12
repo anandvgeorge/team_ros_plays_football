@@ -31,14 +31,15 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #        plt.plot(self.path[0,:], self.path[1,:])  
 #        dash.add(plt)
 
-        veolcity = 19   # velocity of the robot
+        veolcity = 25   # velocity of the robot
         #T = 0.01   # sampling time in ms
     
         pf = self.getBallPose()
         # start, goal, r, q 
 
-        
         d = []
+        robotConf0 = self.getRobotConf(self.bot)  
+        dr = []
         timesave = []
         t = time.time()     # time in seconds
         while (time.time()-t)<15: #End program after 30sec
@@ -50,16 +51,19 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
             self.setMotorVelocities(v[0], v[1])
             ballPos = self.getBallPose()
             d1 = ((ballPos[0]-pf[0])**2 + (ballPos[1]-pf[1])**2)**0.5
-            d.append(d1)            
+            d.append(d1)  
+            d1 = ((robotConf[0]-robotConf0[0])**2 + (robotConf[1]-robotConf0[1])**2)**0.5
+            dr.append(d1) 
             
         self.setMotorVelocities(0,0)
 
-        print 'v=%f' %veolcity
+        print 'vmotors=%f' %veolcity
         print 'time'
         print timesave
-        print 'distance'
+        print 'ball distance'
         print d
-        
+        print 'robot distance'
+        print dr        
 
 
 if __name__ == '__main__':

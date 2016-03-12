@@ -9,10 +9,9 @@ import math
 import numpy as np #array library
 import matplotlib.pyplot as plt #used for image plotting
 import signal
-import matplotlib.pyplot as plt
 
 from idash import IDash
-from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, smoothPath
+from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime
 from plot_helpers import plotVector
 
 
@@ -29,31 +28,30 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #        plt.plot(self.path[0,:], self.path[1,:])  
 #        dash.add(plt)
         
-        k=0.0345    # ball model: d(t) = vrobot*k*(1-exp(-at))
+        k=0.0345    # ball model: d(t) = vrobot*k*(1-exp(-t/T))
 
         goal = (0.0, 0.0)
-        ballPos = self.getBallPose()
-        theta = math.atan2(goal[1]-ballPos[1], goal[0]-ballPos[0])   # atan2(y, x)   
-        finalConf = (ballPos[0], ballPos[1], theta)   
-        print('finalConf.x=%f' % finalConf[0])
-        print('finalConf.y=%f' % finalConf[1])
-        print('finalConf.theta=%f' % finalConf[2])
-        # start, goal, r, q 
-        self.path = smoothPath(self.getRobotConf(self.bot), finalConf, r=0.1, q=0.12)
+        self.path = passPath(self.getRobotConf(self.bot), self.getBallPose(), goal)
         print self.path
+        
         dash = IDash(framerate=0.1)
         dash.add(lambda: plt.plot(-self.path[1,:], self.path[0,:], 'b-*') and
             plt.xlim([-0.7, 0.7]) and plt.ylim([-0.7, 0.7]))
-        dash.plotframe()
+        dash.plotframe()       
+        print 'estimated time path'
+        print calculatePathTime(self.path)
+        t = time.time()
         cc=1
         while cc:
             robotConf = self.getRobotConf(self.bot)            
-            cc = self.followPath(robotConf, v=20, rb=0.05)        
+            cc = self.followPath(robotConf, rb=0.05)        
 #            robotConf = self.getRobotConf(self.bot)
 #            ballPos = self.getBallPose() # (x, y)
 #            vRobot = v2Pos(robotConf, ballPos)
-
+        
         self.setMotorVelocities(0,0)
+        print 'real time path'
+        print (time.time()-t)
         time.sleep(3)
 
 
