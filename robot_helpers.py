@@ -59,7 +59,7 @@ def v2Pos(robotConf, finalPos, v = 20, k=3.5):
         k is the rotation gain """
     x = finalPos[0] - robotConf[0]
     y = finalPos[1] - robotConf[1]
-    norm = (x**2 + y**2)**.5    # euclidian norm
+    norm = (x**2 + y**2)**.5
     if norm == 0:
         vx = vy = 0
     else:       
@@ -72,7 +72,7 @@ def v2Pos(robotConf, finalPos, v = 20, k=3.5):
     rvf = -sin*vx+cos*vy   # robot translational velocity ~~> ohmega
     return (rvf, k*rvt)   # robot velocity (forward, transaltional)
 
-def smoothPath(robotConf, finalConf, r=0.15, q=0.15, theta=math.pi/10, rb=0.025):
+def smoothPath(robotConf, finalConf, r=0.15, q=0.15, theta=math.pi/10, rb=0.05):
     """ inital configuration of the robot, final Configuration of the robot
         radius of arc for path and distance q for a staight line to the final pos
         theta is the angle to set the number of point on the circle arc

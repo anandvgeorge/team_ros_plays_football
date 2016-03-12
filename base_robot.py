@@ -160,7 +160,7 @@ class BaseRobotRunner(object):
             self.setMotorVelocities(0, 0)
             return 0
         else:
-            vRobot = v2Pos(robotConf, self.path[:,0], v)
+            vRobot = v2Pos(robotConf, self.path[:,0])
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
 
