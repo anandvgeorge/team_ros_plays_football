@@ -130,17 +130,18 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     path = np.concatenate((s, p, path), axis=1)
     return path, status
 
-def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, q=0.08, k=0.036): 
+def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, kq=0.002, k=0.036): 
     """
     compute path and velocity for each node
     vr is the velocity of the robot in the circle, 
     r is the radius of the circle,
-    q is the distance from the ballPos to the circle tangeant point,
+    kq is the coeaff to create the distance q from the ballPos to the circle tangeant point,
     k is the coefficient for the ball model: d(t) = vrobot*k*(1-exp(-a*t))
     """
     vmax = 25
     d = ((finalBallPos[0]-ballPos[0])**2+(finalBallPos[1]-ballPos[1])**2)**0.5
     vf = d/k
+    q = 0.04+kq*vf
     theta = math.atan2(finalBallPos[1]-ballPos[1], finalBallPos[0]-ballPos[0])   # atan2(y, x)   
     finalConf = (ballPos[0], ballPos[1], theta)  
     path, status = smoothPath(robotConf, finalConf, r, q)
@@ -153,7 +154,7 @@ def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, q=0.08, k=0.036):
         path[-1, 1]=vmax    
     return path
 
-def calculatePathTime(path, kv=66.65):
+def calculatePathTime(path, kv=66.65):     #kv=66.65
     """ return the estimated time for the robot to follow this path """
     t=0
     for i in range(1, np.size(path,1)):

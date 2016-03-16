@@ -163,7 +163,7 @@ class BaseRobotRunner(object):
             vRobot = v2Pos(robotConf, self.path[0:2,0], self.path[2,0])
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
-
+            
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
