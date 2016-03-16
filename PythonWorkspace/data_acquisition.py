@@ -12,6 +12,7 @@ import numpy as np #array library
 import matplotlib.pyplot as plt #used for image plotting
 import signal
 import matplotlib.pyplot as plt
+import matlab.engine
 
 from idash import IDash
 from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, smoothPath
@@ -30,7 +31,8 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #        dash = IDash(framerate=0.1)            
 #        plt.plot(self.path[0,:], self.path[1,:])  
 #        dash.add(plt)
-
+        eng = matlab.engine.start_matlab()
+        
         veolcity = 25   # velocity of the robot
         #T = 0.01   # sampling time in ms
     

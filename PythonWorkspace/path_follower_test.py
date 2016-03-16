@@ -28,7 +28,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #        plt.plot(self.path[0,:], self.path[1,:])  
 #        dash.add(plt)
         
-        k=0.0345    # ball model: d(t) = vrobot*k*(1-exp(-t/T))
+        k=0.0345    # ball model: d(t) = vmot*k*(1-exp(-t/T))
 
         goal = (0.0, 0.0)
         self.path = passPath(self.getRobotConf(self.bot), self.getBallPose(), goal)

@@ -11,7 +11,8 @@ class ZonePasser(base_robot.BaseRobotRunner):
 
     # zone_locations[0] returns zone location 1 from the diagram in the slides
     zone_locations = np.array([[0.3, 0.3, -0.3, -0.3],
-                               [0.4, -0.4, 0.4, -0.4]])
+                               [0.4, -0.4, 0.4, -0.4],
+                               [20, 20, 20, 20]])
 
     def __init__(self, *args, **kwargs):
         super(ZonePasser, self).__init__(*args, **kwargs)

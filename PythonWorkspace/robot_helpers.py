@@ -154,7 +154,7 @@ def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, kq=0.002, k=0.036)
         path[-1, 1]=vmax    
     return path
 
-def calculatePathTime(path, kv=66.65):     #kv=66.65
+def calculatePathTime(path, kv=66.65):     #kv=66.65=vmot/vrobot
     """ return the estimated time for the robot to follow this path """
     t=0
     for i in range(1, np.size(path,1)):
