@@ -51,3 +51,8 @@ figure
 dr_dot = (dr(1:end-1)-dr(2:end))./(t(1:end-1)-t(2:end));
 plot(t, db, t, dr, t(1:end-1), dr_dot)
 
+
+di=@(ti, d0, t0, k0) d0+k0.*(1.-exp(-(ti-t0)./T)) 
+figure
+ti = linspace(0, 20, 200);
+plot(ti, di(ti, 0, 0, 1),ti, di(ti, 0, 3, 1),ti, di(ti, 0, -3, 1))

@@ -117,8 +117,7 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     alpha2=math.atan2(t[1,0]-c[1,0], t[0,0]-c[0,0])     # atan2(y, x)   
     alpha=math.fabs(alpha1-alpha2)
     if (alpha2>alpha1 and gamma>0) or (alpha2<alpha1 and gamma<0):
-        alpha = 2*math.pi-alpha
-    print np.rad2deg(alpha)     
+        alpha = 2*math.pi-alpha    
     if q<n: # if we have enough space to add a point between s and p    
         status=0                                    
         p0=p+q*(s-p)/n # add p0 at a distance q from p

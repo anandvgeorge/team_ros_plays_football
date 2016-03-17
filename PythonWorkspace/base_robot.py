@@ -27,6 +27,78 @@ class GracefulKiller:
     def exit_gracefully(self,signum, frame):
         self.kill_now = True
 
+class BallEngine:
+    def __init__(self, clientID):
+        self.clientID = clientID
+        _, self.handle=vrep.simxGetObjectHandle(
+            self.clientID, 'Ball', vrep.simx_opmode_oneshot_wait)
+        self.posm2 = self.getBallPose()
+        self.tm2 = time.time()
+        self.posm1 = self.getBallPose()
+        self.tm1 = time.time()
+        self.pos = self.getBallPose()
+        self.t = time.time()
+        self.T = 2.15   # time constant in [s]
+
+
+    def getBallPose(self):
+        _, xyz = vrep.simxGetObjectPosition(
+            self.clientID, self.handle, -1, vrep.simx_opmode_streaming)
+        x, y, z = xyz
+        return [x, y]
+        
+    def update(self):
+        self.posm2 = self.posm1
+        self.tm2 = self.tm1
+        self.posm1 = self.pos
+        self.tm1 = self.t
+        self.pos = self.getBallPose()
+        self.t = time.time()  
+        
+    def getNextRestPos(self):
+        """ return the next ball position at rest and the time to reach it,
+            model: d(t) = d0 + k0*(1-exp(-(t-t0)/T)), T = 2.15 [s]
+        """
+        tol = 0.0001
+        x=y=t=0
+        norm = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
+        if math.fabs(norm/(self.t-self.tm2))<tol:
+            return self.pos # too small velocity => ball already at rest
+        k0, t0  = self.getModel()
+        u = [(self.pos[0]-self.posm2[0])/norm, (self.pos[1]-self.posm2[1])/norm]
+        restPos = [self.posm2[0]+k0*u[0], self.posm2[1]+k0*u[1]]
+        return restPos      
+
+    def getModel(self):
+        """ return the next ball position at rest and the time to reach it,
+            model: d(t)=k*(1-exp((-t+t0)/T)), T = 2.15 [s]
+            u = (pos-posm2)/||(pos-posm2)||
+            pos(t) = posm2 + u*d(t)
+            for 3 point, i=1,2,3:
+            di(ti) = k0*(1-exp(-(ti-t0)/T))
+            2 unknows: t0, k0, (T is always the same)
+            
+        """
+        tol = 0.00001
+        d1 = ((self.posm1[0]-self.posm2[0])**2+(self.posm1[1]-self.posm2[1])**2)**0.5
+        d2 = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
+        t1 = self.tm1-self.tm2
+        t2 = self.t-self.tm2
+        if math.fabs(t1-t2)<tol:    # no solution if t1=t2
+            k0 = 0
+        else:
+            k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
+        cte = (d2-d1)/(d2*math.exp(-t1/self.T)-d1*math.exp(-t2/self.T))
+        if cte < tol:   # no solution for negativ numbers
+            t0 = 0
+        else:
+            t0 = self.T*math.log(cte)
+        return k0, t0 
+        
+        
+        
+
+        
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
@@ -55,6 +127,7 @@ class BaseRobotRunner(object):
         self.initializeVrepApi()
         #self.killer = GracefulKiller()
         self.idash = IDash(framerate=0.05)
+        self.ballEngine = BallEngine(self.clientID)
 
     def exploreClassAttributes(self):
         for variable_name, variable_value in self.__dict__.iteritems():
@@ -95,8 +168,6 @@ class BaseRobotRunner(object):
             self.clientID, '%s_rightJoint' % self.bot_name, vrep.simx_opmode_oneshot_wait)
         _, self.bot=vrep.simxGetObjectHandle(
             self.clientID, self.bot_name, vrep.simx_opmode_oneshot_wait)
-        _, self.ball=vrep.simxGetObjectHandle(
-            self.clientID, 'Ball', vrep.simx_opmode_oneshot_wait)
 
         # proxSens = prox_sens_initialize(self.clientID)
         # initialize odom of bot
@@ -118,9 +189,6 @@ class BaseRobotRunner(object):
             self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming)
         _, eulerAnglesStriker = vrep.simxGetObjectOrientation(
             self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming)
-        # get ball position
-        _, ballxyz = vrep.simxGetObjectPosition(
-            self.clientID, self.ball, -1, vrep.simx_opmode_streaming)
 
     @abc.abstractmethod
     def robotCode(self):
@@ -136,12 +204,6 @@ class BaseRobotRunner(object):
         theta = eulerAngles[2]
 
         return (x, y, theta)
-
-    def getBallPose(self):
-        _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.ball, -1, vrep.simx_opmode_streaming)
-        x, y, z = xyz
-        return (x, y)
 
     def setMotorVelocities(self, forward_vel, omega):
         ctrl_sig_left, ctrl_sig_right = vomega2bytecodes(forward_vel, omega, g=1)
@@ -231,6 +293,7 @@ class MultiRobotRunner(object):
         self.ip = ip
         self.initializeVrepClient()
         self.bots = []
+        self.ballEngine = BallEngine(self.clientID)
 
     def initializeVrepClient(self):
         #Initialisation for Python to connect to VREP
@@ -287,7 +350,6 @@ class MultiRobotCyclicExecutor(MultiRobotRunner):
     """
     def __init__(self, *args, **kwargs):
         super(MultiRobotCyclicExecutor, self).__init__(*args, **kwargs)
-
     def run(self):
         """ Run method is a Cyclic Exectuor.
         robots that are added with `addRobot` should have method
@@ -302,6 +364,7 @@ class MultiRobotCyclicExecutor(MultiRobotRunner):
             while True:
                 for bot in self.bots:
                     bot.robotCode()
+                self.ballEngine.update()
 
         self.clean_exit()
 
