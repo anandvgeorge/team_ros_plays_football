@@ -40,21 +40,24 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         dash.plotframe()       
         print 'estimated time path'
         print calculatePathTime(self.path)
-        t = time.time()
-        cc=1
-        while cc:
+        t = self.ballEngine.getSimTime()
+        t = self.ballEngine.getSimTime()     # time in seconds
+        while (self.ballEngine.getSimTime()-t)<10: #End program after 30sec
+#        cc=1
+#        while cc:
             robotConf = self.getRobotConf(self.bot)            
-            cc = self.followPath(robotConf, rb=0.05)        
+            cc = self.followPath(robotConf, rb=0.05) 
+            self.ballEngine.update()
+            nextBallPos = self.ballEngine.getNextRestPos()
 #            robotConf = self.getRobotConf(self.bot)
 #            ballPos = self.ballEngine.getBallPose() # (x, y)
 #            vRobot = v2Pos(robotConf, ballPos)
         
         self.setMotorVelocities(0,0)
         print 'real time path'
-        print (time.time()-t)
-        time.sleep(3)
+        print (self.ballEngine.getSimTime()-t)
 
 
 if __name__ == '__main__':
-    obj = MyRobotRunner('Blue', 1)
+    obj = MyRobotRunner('Blue', 1) # ip='172.29.34.63'
     obj.run()

@@ -24,35 +24,27 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
     def robotCode(self):
         
-        np.set_printoptions(linewidth=np.inf)
-        
-        self.path = np.array([[0.3, 0.3, -0.3, -0.3],
-                              [0.4, -0.4, -0.4, 0.4]])                          
-#        dash = IDash(framerate=0.1)            
-#        plt.plot(self.path[0,:], self.path[1,:])  
-#        dash.add(plt)
+        np.set_printoptions(linewidth=np.inf)                       
 
+        """ to measure the trajectory of the robot and ball during shoot
+        need to be used with pass_axample.m matlab script"""
         goal = [0.0, 0.0]
         self.path = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)        
         dash = IDash(framerate=0.1)
         dash.add(lambda: plt.plot(-self.path[1,:], self.path[0,:], 'b-*') and
             plt.xlim([-0.7, 0.7]) and plt.ylim([-0.7, 0.7]))
         dash.plotframe()       
-#        print 'estimated time path'
-#        print calculatePathTime(self.path)
         print 'goal='
         print goal
         print 'path='  
         print self.path  
-        #robotConf = self.getRobotConf(self.bot) 
         pr = np.array([[],[]]) #np.array([[robotConf[0]],[robotConf[1]]])   # position of robot
-        #ballpos = self.ballEngine.getBallPose()
         pb = np.array([[],[]]) #np.array([[ballpos[0]],[ballpos[1]]])     # position of ball
         peg = np.array([[],[]])     # position of estimated goal
         timesave = []   # time
-        t = time.time()     # time in seconds
-        while (time.time()-t)<30: #End program after 30sec
-            remaining = time.time()-t
+        t = self.ballEngine.getSimTime()     # time in seconds
+        while (self.ballEngine.getSimTime()-t)<20: #End program after 30sec
+            remaining = self.ballEngine.getSimTime()-t
             timesave.append(remaining)
             robotConf = self.getRobotConf(self.bot)            
             self.followPath(robotConf, rb=0.05) 
@@ -71,8 +63,10 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         print pb
         print 'goalEstim='
         print peg
-           
-#        veolcity = 25   # velocity of the robot
+        
+        """ to measure distance of the ball after shoot
+            need to be used with ballModel.m matlab script"""
+#        veolcity = 13   # velocity of the robot
 #        #T = 0.01   # sampling time in ms
 #        pf = self.ballEngine.getBallPose()
 #        # start, goal, r, q 
@@ -80,9 +74,9 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #        robotConf0 = self.getRobotConf(self.bot)  
 #        dr = []
 #        timesave = []
-#        t = time.time()     # time in seconds
-#        while (time.time()-t)<15: #End program after 30sec
-#            remaining = time.time()-t
+#        t = self.ballEngine.getSimTime()    # time in seconds
+#        while (self.ballEngine.getSimTime()-t)<30: #End program after 30sec
+#            remaining = self.ballEngine.getSimTime()-t
 #            timesave.append(remaining)
 #            #print "Time Remaining=", remaining    
 #            robotConf = self.getRobotConf(self.bot)            
