@@ -46,7 +46,13 @@ class BallEngine:
             self.clientID, self.handle, -1, vrep.simx_opmode_streaming)
         x, y, z = xyz
         return [x, y]
-        
+
+    def setBallPose(self, positionxy):
+        position = np.concatenate((np.asarray(positionxy), np.array([z])))
+        _ = vrep.simxSetObjectPosition(
+            self.clientID, self.handle, -1, position, vrep.simx_opmode_oneshot
+        )
+
     def update(self):
         self.posm2 = self.posm1
         self.tm2 = self.tm1

@@ -60,25 +60,47 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
         self.activezones = []
         self.receivingzones = []
+        self.activeplayer = None
+        self.receivingplayer = None
+        self.zones = {( 1,  1): 1,
+                      ( 1, -1): 2,
+                      (-1,  1): 3,
+                      (-1, -1): 4}
+
+        self.zone_locations = np.array([[0.3, 0.3, -0.3, -0.3],
+                                        [0.4, -0.4, 0.4, -0.4],])
+
+        # TODO: remove me since we're not allowed to set the ball pose
+        # start ball at zone 4 - 1 (0 indexed)
+        ball_start = self.zone_locations[:,3]
+        ball_start -= 0.05
+        self.ballEngine.setBallPose(ball_start)
 
     def getClosestZone(self, pose):
         """ get zone which the current pose is closest to. This pose could
         be a ball, an opposing player, etc. """
         sgn_x = np.sign(pose[0])
         sgn_y = np.sign(pose[1])
-        zones = {( 1,  1): 1,
-                 ( 1, -1): 2,
-                 (-1,  1): 3,
-                 (-1, -1): 4}
-        return zones[(sgn_x, sgn_y)]
+        return self.zones[(sgn_x, sgn_y)]
 
+    def getBotInZone(self, zone):
+        """ Returns the index of the bot which is inside the zone """
+        bot_zones = np.zeros(len(self.bots))
+        print("Entered getBotInZone")
+        for bot_idx, bot in enumerate(self.bots):
+            bot_zones[bot_idx] = self.getClosestZone(bot.getRobotConf(bot.bot))
+        return np.where(bot_zones == zone)
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
             self.ballpose = self.ballEngine.getBallPose() # get initial ball pose
             # first active zone is where the ball starts           
             self.activezones.append(self.getClosestZone(self.ballpose))
-            print self.activezones            
+            activezone_idx = 0            
+
+            self.activeplayer = self.getBotInZone(self.activezones[activezone_idx])
+            print self.activeplayer
+
             t0 = time.time()
             while time.time() - t0 < 10:
                 for bot in self.bots:
