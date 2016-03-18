@@ -53,13 +53,32 @@ class ZonePasserMaster(base_robot.MultiRobotRunner):
         super(ZonePasserMaster, self).__init__(*args, **kwargs)
 
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
-
+    """After doing part A of Question 2, the ball will already be
+    placed in Zone 4; so let's transport it there now"""
+    
     def __init__(self, *args, **kwargs):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
+        self.activezones = []
+        self.receivingzones = []
+
+    def getClosestZone(self, pose):
+        """ get zone which the current pose is closest to. This pose could
+        be a ball, an opposing player, etc. """
+        sgn_x = np.sign(pose[0])
+        sgn_y = np.sign(pose[1])
+        zones = {( 1,  1): 1,
+                 ( 1, -1): 2,
+                 (-1,  1): 3,
+                 (-1, -1): 4}
+        return zones[(sgn_x, sgn_y)]
 
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            self.ballpose = self.ballEngine.getBallPose() # get initial ball pose
+            # first active zone is where the ball starts           
+            self.activezones.append(self.getClosestZone(self.ballpose))
+            print self.activezones            
             t0 = time.time()
             while time.time() - t0 < 10:
                 for bot in self.bots:
