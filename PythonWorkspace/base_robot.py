@@ -28,10 +28,13 @@ class GracefulKiller:
         self.kill_now = True
 
 class BallEngine:
+    
     def __init__(self, clientID):
         self.clientID = clientID
         _, self.handle=vrep.simxGetObjectHandle(
             self.clientID, 'Ball', vrep.simx_opmode_oneshot_wait)
+        vrep.simxGetObjectPosition(
+            self.clientID, self.handle, -1, vrep.simx_opmode_streaming)
         self.posm2 = self.getBallPose()
         self.tm2 = time.time()
         self.posm1 = self.getBallPose()
@@ -39,11 +42,11 @@ class BallEngine:
         self.pos = self.getBallPose()
         self.t = time.time()
         self.T = 2.15   # time constant in [s]
-
+        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming) 
 
     def getBallPose(self):
         _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.handle, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.handle, -1, vrep.simx_opmode_buffer)
         x, y, z = xyz
         return [x, y]
         
@@ -53,14 +56,23 @@ class BallEngine:
         self.posm1 = self.pos
         self.tm1 = self.t
         self.pos = self.getBallPose()
-        self.t = time.time()  
+        self.t = self.getSimTime()
         
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
             model: d(t) = d0 + k0*(1-exp(-(t-t0)/T)), T = 2.15 [s]
         """
+#        print 'posm2'
+#        print self.posm2
+#        print 'posm1'
+#        print self.posm1        
+#        print 'pos'
+#        print self.pos
+#        print 'tm2'
+#        print self.tm2
+#        print 't'
+#        print self.t
         tol = 0.0001
-        x=y=t=0
         norm = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
         if math.fabs(norm/(self.t-self.tm2))<tol:
             return self.pos # too small velocity => ball already at rest
@@ -84,25 +96,30 @@ class BallEngine:
         d2 = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
         t1 = self.tm1-self.tm2
         t2 = self.t-self.tm2
-        if math.fabs(t1-t2)<tol:    # no solution if t1=t2
-            k0 = 0
-        else:
-            k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
-        cte = (d2-d1)/(d2*math.exp(-t1/self.T)-d1*math.exp(-t2/self.T))
-        if cte < tol:   # no solution for negativ numbers
-            t0 = 0
-        else:
-            t0 = self.T*math.log(cte)
+#        if math.fabs(t1-t2)<tol:    # no solution if t1=t2
+#            k0 = 0
+#        else:
+#            k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
+        k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
+#        cte = (d2-d1)/(d2*math.exp(-t1/self.T)-d1*math.exp(-t2/self.T))
+#        if cte < tol:   # no solution for negativ numbers
+#            t0 = 0
+#        else:
+#            t0 = self.T*math.log(cte)
+        t0 = 0
         return k0, t0 
         
-        
+    def getSimTime(self):
+#        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
+        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]        
+        return t
         
 
         
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, color, number, clientID=None, ip='127.0.0.1'):
+    def __init__(self, color, number, clientID=None, ip='127.0.0.1'): # ip='127.0.0.1', '172.29.34.63'
         """
         color: i.e. 'Blue'
         number: i.e. 1
