@@ -7,37 +7,36 @@ import base_robot
 import numpy as np
 import time
 
-class ZonePasser(base_robot.BaseRobotRunner):
+class ZonePasserCyclic(base_robot.BaseRobotRunner):
 
     # zone_locations[0] returns zone location 1 from the diagram in the slides
-    zone_locations = np.array([[0.3, 0.3, -0.3, -0.3],
-                               [0.4, -0.4, 0.4, -0.4],
+    loc_x = 0.3
+    loc_y = 0.6
+    zone_locations = np.array([[loc_x, loc_x, -loc_x, -loc_x],
+                               [loc_y, -loc_y, loc_y, -loc_y],
                                [20, 20, 20, 20]])
 
     def __init__(self, *args, **kwargs):
-        super(ZonePasser, self).__init__(*args, **kwargs)
+        super(ZonePasserCyclic, self).__init__(*args, **kwargs)
         self.delay = 0
+        self.path = None
+
+    def add_to_path(self, path_objective):
+        path_objective = np.asarray(path_objective).reshape(-1, 1)
+        if self.path is not None:
+            self.path = np.column_stack((
+                self.path,
+                path_objective
+            ))
+        else:
+            self.path = path_objective
 
     def add_zone_destination(self, number):
         index = number - 1 # 0 vs 1 indexing
-        self.path = self.zone_locations[:, index].reshape(-1, 1)
+        self.add_to_path(self.zone_locations[:, index])
 
     def add_delay(self, delay):
         self.delay = delay
-
-    def robotCode(self):
-        print("%s started" % self.bot_name)
-        t0 = time.time()
-        time.sleep(self.delay)
-        while time.time() - t0 < 20:
-            robotConf = self.getRobotConf(self.bot)
-            self.followPath(robotConf)
-        print("%s finished" % self.bot_name)
-
-class ZonePasserCyclic(ZonePasser):
-
-    def __init__(self, *args, **kwargs):
-        super(ZonePasserCyclic, self).__init__(*args, **kwargs)
 
     def robotCode(self):
         """ For Robots using a cyclic executor,
@@ -47,15 +46,10 @@ class ZonePasserCyclic(ZonePasser):
         robotConf = self.getRobotConf(self.bot)
         self.followPath(robotConf)
 
-class ZonePasserMaster(base_robot.MultiRobotRunner):
-
-    def __init__(self, *args, **kwargs):
-        super(ZonePasserMaster, self).__init__(*args, **kwargs)
-
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
     placed in Zone 4; so let's transport it there now"""
-    
+
     def __init__(self, *args, **kwargs):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
         self.activezones = []
@@ -67,14 +61,18 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                       (-1,  1): 3,
                       (-1, -1): 4}
 
-        self.zone_locations = np.array([[0.3, 0.3, -0.3, -0.3],
-                                        [0.4, -0.4, 0.4, -0.4],])
+        loc_x = 0.3
+        loc_y = 0.4
+        self.zone_locations = np.array([[loc_x, loc_x, -loc_x, -loc_x],
+                                        [loc_y, -loc_y, loc_y, -loc_y],])
 
         # TODO: remove me since we're not allowed to set the ball pose
         # start ball at zone 4 - 1 (0 indexed)
         ball_start = self.zone_locations[:,3]
         ball_start -= 0.05
         self.ballEngine.setBallPose(ball_start)
+
+        self.zone_pass_plan = [4, 2, 1, 3, 4, 2] # the locations between the 5 passes
 
     def getClosestZone(self, pose):
         """ get zone which the current pose is closest to. This pose could
@@ -90,16 +88,30 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         for bot_idx, bot in enumerate(self.bots):
             bot_zones[bot_idx] = self.getClosestZone(bot.getRobotConf(bot.bot))
         return np.where(bot_zones == zone)
+
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
             self.ballpose = self.ballEngine.getBallPose() # get initial ball pose
-            # first active zone is where the ball starts           
+
+            # first active zone is where the ball starts
             self.activezones.append(self.getClosestZone(self.ballpose))
-            activezone_idx = 0            
+            activezone_idx = 0
 
             self.activeplayer = self.getBotInZone(self.activezones[activezone_idx])
             print self.activeplayer
+
+            # set them up in the first 3 zones
+            for idx in range(len(self.bots)):
+                if self.zone_pass_plan[idx] == 2:
+                    # zone 2 has some robots blocking, so navigate to zone 2
+                    # in a couple of steps
+                    x_coord_zone = self.zone_locations[0, 1]
+                    self.bots[idx].add_to_path([x_coord_zone, 0, 20])
+                self.bots[idx].add_zone_destination(self.zone_pass_plan[idx])
+                self.bots[idx].add_delay(1*idx) # delay each by one second
+            for bot in self.bots:
+                print(bot.bot_name, bot.path)
 
             t0 = time.time()
             while time.time() - t0 < 10:
@@ -113,17 +125,17 @@ runner = ZonePasserMasterCyclic(ip='127.0.0.1')
 
 print "runnerClientID", runner.clientID
 bot1 = ZonePasserCyclic(color='Blue', number=1, clientID=runner.clientID)
-bot1.add_zone_destination(1)
+#bot1.add_zone_destination(1)
 runner.addRobot(bot1)
 
 bot2 = ZonePasserCyclic(color='Blue', number=2, clientID=runner.clientID)
-bot2.add_zone_destination(4)
-bot2.add_delay(1)
+#bot2.add_zone_destination(4)
+#bot2.add_delay(1)
 runner.addRobot(bot2)
 
 bot3 = ZonePasserCyclic(color='Blue', number=3, clientID=runner.clientID)
-bot3.add_zone_destination(3)
-bot3.add_delay(2)
+#bot3.add_zone_destination(3)
+#bot3.add_delay(2)
 runner.addRobot(bot3)
 
 runner.run()
