@@ -6,13 +6,16 @@ import vrep
 import base_robot
 import numpy as np
 import time
+from robot_helpers import passPath
+
+STATE_FOLLOW_PATH = 0
 
 class ZonePasserCyclic(base_robot.BaseRobotRunner):
 
-    # zone_locations[0] returns zone location 1 from the diagram in the slides
+    # zone_corners[0] returns zone location 1 from the diagram in the slides
     loc_x = 0.3
     loc_y = 0.6
-    zone_locations = np.array([[loc_x, loc_x, -loc_x, -loc_x],
+    zone_corners = np.array([[loc_x, loc_x, -loc_x, -loc_x],
                                [loc_y, -loc_y, loc_y, -loc_y],
                                [20, 20, 20, 20]])
 
@@ -33,23 +36,25 @@ class ZonePasserCyclic(base_robot.BaseRobotRunner):
 
     def add_zone_destination(self, number):
         index = number - 1 # 0 vs 1 indexing
-        self.add_to_path(self.zone_locations[:, index])
+        self.add_to_path(self.zone_corners[:, index])
 
     def add_delay(self, delay):
         self.delay = delay
 
-    def robotCode(self):
+    def robotCode(self, state):
         """ For Robots using a cyclic executor,
         robotCode should return in a small amount of time
         (i.e. NOT be implemented with a while loop)
         """
-        robotConf = self.getRobotConf(self.bot)
-        self.followPath(robotConf)
+        if state==STATE_FOLLOW_PATH:
+            robotConf = self.getRobotConf(self.bot)
+            self.followPath(robotConf)
 
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
     placed in Zone 4; so let's transport it there now"""
 
+    
     def __init__(self, *args, **kwargs):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
         self.activezones = []
@@ -63,12 +68,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
         loc_x = 0.3
         loc_y = 0.4
-        self.zone_locations = np.array([[loc_x, loc_x, -loc_x, -loc_x],
+        self.zone_centers = np.array([[loc_x, loc_x, -loc_x, -loc_x],
                                         [loc_y, -loc_y, loc_y, -loc_y],])
 
         # TODO: remove me since we're not allowed to set the ball pose
         # start ball at zone 4 - 1 (0 indexed)
-        ball_start = self.zone_locations[:,3]
+        ball_start = self.zone_centers[:,3]
         ball_start -= 0.05
         self.ballEngine.setBallPose(ball_start)
 
@@ -82,43 +87,89 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         return self.zones[(sgn_x, sgn_y)]
 
     def getBotInZone(self, zone):
-        """ Returns the index of the bot which is inside the zone """
+        """ Returns the index of the bot which is inside the zone, otherwise None
+        if there is no bot inside this zone"""
         bot_zones = np.zeros(len(self.bots))
         print("Entered getBotInZone")
         for bot_idx, bot in enumerate(self.bots):
             bot_zones[bot_idx] = self.getClosestZone(bot.getRobotConf(bot.bot))
-        return np.where(bot_zones == zone)
+        # we use [0][0] since return of np.where looks like (array([2]),)
+        zone_as_array = np.where(bot_zones == zone)[0]
+        if zone_as_array.size == 0:
+            return None
+        else:
+            return zone_as_array[0] # the first, if there are multiple in that zone
 
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
-            self.ballpose = self.ballEngine.getBallPose() # get initial ball pose
-
-            # first active zone is where the ball starts
-            self.activezones.append(self.getClosestZone(self.ballpose))
-            activezone_idx = 0
-
-            self.activeplayer = self.getBotInZone(self.activezones[activezone_idx])
-            print self.activeplayer
 
             # set them up in the first 3 zones
             for idx in range(len(self.bots)):
                 if self.zone_pass_plan[idx] == 2:
                     # zone 2 has some robots blocking, so navigate to zone 2
                     # in a couple of steps
-                    x_coord_zone = self.zone_locations[0, 1]
+                    x_coord_zone = self.zone_centers[0, 1]
                     self.bots[idx].add_to_path([x_coord_zone, 0, 20])
                 self.bots[idx].add_zone_destination(self.zone_pass_plan[idx])
                 self.bots[idx].add_delay(1*idx) # delay each by one second
             for bot in self.bots:
                 print(bot.bot_name, bot.path)
 
-            t0 = time.time()
+            # TODO: replace system time with vrep simxTime
+            t0 = time.time()            
+            # get the bots into position
             while time.time() - t0 < 10:
                 for bot in self.bots:
                     if time.time() - t0 >= bot.delay:
-                        bot.robotCode()
+                        bot.robotCode(STATE_FOLLOW_PATH)
+                        
+            # follow the zone passing plan
+            activezone_idx = 0
+            shoot_flag = False
+            plan_length = len(self.zone_pass_plan)
+            executing = False
+            # TODO: maybe something like below with states for all bots?
+            # bot_states = [0, 1, 2] where numbers            
+            t1 = time.time()
+            while time.time() - t1 < 60:
+                activezone = self.zone_pass_plan[activezone_idx]
+   
+                if plan_length > activezone_idx + 1:
+                    rcvzone = self.zone_pass_plan[activezone_idx + 1]                    
+                # no more rcvers!  time to shoot
+                else:
+                    shoot_flag = True
 
+                # get into position receiving player
+                rcvbot_idx = self.getBotInZone(rcvzone)
+                # TODO: get into position receiving bot! (if not in zone)
+                assert rcvbot_idx is not None                
+                rcvbot = self.bots[rcvbot_idx]
+
+                # TODO: get into position active player (if not in zone)!
+                activebot_idx = self.getBotInZone(activezone)
+                assert activebot_idx is not None
+                activebot = self.bots[activebot_idx]
+                
+                # calculate path the bot has to follow
+                if not executing:
+                    activeRobotConf = activebot.getRobotConf(activebot.bot)
+                    ballPos = self.ballEngine.getBallPose()
+                    finalBallPos = self.zone_centers[:, rcvzone - 1]
+                    activebot.path = passPath(activeRobotConf, ballPos, finalBallPos)
+                    executing = True
+                
+                activebot.robotCode(STATE_FOLLOW_PATH)
+
+                ballPose = self.ballEngine.getBallPose()
+                # ball has exited active zone, moving into receiving zone
+                # TODO: maybe add "velocity" compoenent to ballEngine to know when the ball has stopped
+                if self.getClosestZone(ballPose) != activezone:
+                    # increment what is the new active zone
+                    activezone_idx += 1
+                    executing = False # ready to plan the next execution
+                
         self.clean_exit()
 
 runner = ZonePasserMasterCyclic(ip='127.0.0.1')
