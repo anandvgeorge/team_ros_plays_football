@@ -33,16 +33,7 @@ class ZonePasserCyclic(base_robot.BaseRobotRunner):
         self.delay = 0
         self.path = None
 
-    def add_to_path(self, path_objective):
-        """ path objective is array-like, shape (3,-1) """
-        path_objective = np.asarray(path_objective).reshape(3, -1)
-        if self.path is not None:
-            self.path = np.column_stack((
-                self.path,
-                path_objective
-            ))
-        else:
-            self.path = path_objective
+
 
     def add_zone_destination(self, number):
         index = number - 1 # 0 vs 1 indexing
@@ -57,7 +48,7 @@ class ZonePasserCyclic(base_robot.BaseRobotRunner):
         (i.e. NOT be implemented with a while loop)
         """
         robotConf = self.getRobotConf(self.bot)
-        self.followPath(robotConf, rb=rb)
+        return self.followPath(robotConf, rb=rb)
 
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
@@ -131,7 +122,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             else:
                 return sortedargs[0]
 
-    def planToMoveIntoReceivingPosition(self, idx, rcvzone=None, startSmoothPathConf=None):
+    def planToMoveIntoReceivingPosition(self, idx, rcvzone=None, startSmoothPathConf=None, vel=15, r=0.01):
         """ Move into the corner, facing center
         Parameters
         ----------
@@ -155,9 +146,9 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         smooth_path, status = smoothPath(
             startSmoothPathConf,             # robotConf
             [final_x, final_y, final_theta], # finalConf
-            r=0.01
+            r=r
         )
-        v = 10*np.ones((1, np.size(smooth_path,1))) # 20 is default vel
+        v = vel*np.ones((1, np.size(smooth_path,1)))
         smooth_path = np.concatenate((smooth_path, v), axis=0)
         self.bots[idx].add_to_path(smooth_path)
 
@@ -201,7 +192,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 else:
                     startSmoothPathConf = self.bots[idx].getRobotConf(self.bots[idx].bot)
 
-                self.planToMoveIntoReceivingPosition(idx, startSmoothPathConf=startSmoothPathConf)
+                self.planToMoveIntoReceivingPosition(idx, startSmoothPathConf=startSmoothPathConf, vel=10)
                 self.bots[idx].add_delay(1*idx) # delay each by one second
 
             # TODO: replace system time with vrep simxTime
@@ -264,12 +255,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     p1 = np.array(rcvbot.getRobotConf()[:2])
                     p2 = self.zone_corners[:, rcvzone - 1]
                     # not yet in position
-                    if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.03:
+                    if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.05: # radius buffer
                         if not executing[rcvbot_idx]:
                             self.planToMoveIntoReceivingPosition(rcvbot_idx, rcvzone)
+                            rcvbot.prunePath()
                             executing[rcvbot_idx] = True
-                        self.bots[rcvbot_idx].robotCode()
-                    # in position
+                        rcvbot.robotCode()
                     else:
                         executing[rcvbot_idx] = False
 
@@ -277,13 +268,15 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     if not executing[activebot_idx]:
                         activeRobotConf = activebot.getRobotConf(activebot.bot)
                         ballRestPos = self.ballEngine.getBallPose()
+                        # FIXME: when rcvbot is not in the receiving zone, the pass is incorrect!
                         xy1 = rcvbot.getRobotConf()[:2]
                         if next_rcvzone:
                             xy2 = self.zone_corners[:,next_rcvzone-1]
                         else:
                             xy2 = [0, -0.75]
                         finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
-                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
+                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, vr=10)
+                        activebot.prunePath()
                         # FIXME: if the path produced is invalid, i.e some part of it is off the field and invalid
                         #        prune that part of the path to make it valid
                         # FIXME: if path is not long enough

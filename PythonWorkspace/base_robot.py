@@ -253,6 +253,36 @@ class BaseRobotRunner(object):
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
 
+    def add_to_path(self, path_objective):
+        """ path objective is array-like, shape (3,-1) """
+        path_objective = np.asarray(path_objective).reshape(3, -1)
+        if self.path is not None:
+            self.path = np.column_stack((
+                self.path,
+                path_objective
+            ))
+        else:
+            self.path = path_objective
+
+    def prunePath(self, xlim=0.48, ylim=0.7):
+        """ Removes elements in the path if they are not within the bounds.
+        Changes the self.path attribute according to this pruning.
+
+        Parameters
+        ----------
+        xlim: number
+            the magnitude of the bounds of the field in the x direction
+
+        ylim: number
+            the magnitude of the bounds of the field in the y direction
+        """
+        pruned_path = []
+        for idx in range(self.path.shape[1]):
+            # within the boundary
+            if np.abs(self.path[0,idx]) < xlim or np.abs(self.path[1,idx]) < ylim:
+                pruned_path.append(self.path[:,idx])
+        self.path = np.column_stack(pruned_path)
+
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
