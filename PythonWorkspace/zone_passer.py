@@ -60,7 +60,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
     placed in Zone 4; so let's transport it there now"""
 
-    
+
     def __init__(self, *args, **kwargs):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
         self.activezones = []
@@ -83,6 +83,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         ball_start = self.zone_centers[:,3]
         ball_start -= 0.05
         self.ballEngine.setBallPose(ball_start)
+        self.ballEngine.update()
 
         self.zone_pass_plan = [4, 2, 1, 3, 4, 2] # the locations between the 5 passes
 
@@ -95,8 +96,8 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         return np.argmin(dist_from_zones) + 1 # zones are 1-indexed
 
     def getBotInZone(self, zone):
-        """ 
-        Not using now        
+        """
+        Not using now
         Returns the index of the bot which is inside the zone, otherwise None
         if there is no bot inside this zone"""
         bot_zones = np.zeros(len(self.bots))
@@ -140,7 +141,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 desired_zone = self.zone_pass_plan[idx]
                 final_x = self.bots[idx].zone_corners[0, desired_zone - 1]
                 final_y = self.bots[idx].zone_corners[1, desired_zone - 1]
-                # final theta will be facing towards center field                
+                # final theta will be facing towards center field
                 _ , final_theta = ThetaRange.cart2pol(final_x, final_y)
                 final_theta = ThetaRange.normalize_angle(final_theta + np.pi) # flip it towards center
                 print "zone, theta: ", (desired_zone, final_theta)
@@ -152,7 +153,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 v = 15*np.ones((1, np.size(smooth_path,1))) # 20 is default vel
                 smooth_path = np.concatenate((smooth_path, v), axis=0)
                 self.bots[idx].add_to_path(smooth_path)
-                
+
                 # vs direct path
                 # self.bots[idx].add_zone_destination(self.zone_pass_plan[idx])
 
@@ -161,26 +162,27 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 print(bot.bot_name, bot.path)
 
             # TODO: replace system time with vrep simxTime
-            t0 = time.time()            
+            t0 = time.time()
             # get the bots into position
-            while time.time() - t0 < 10:
+            while time.time() - t0 < 15:
                 for bot in self.bots:
                     if time.time() - t0 >= bot.delay:
                         bot.robotCode(STATE_FOLLOW_PATH)
-                        
+
             # follow the zone passing plan
             activezone_idx = 0
             shoot_flag = False
             plan_length = len(self.zone_pass_plan)
             executing = False
             # TODO: maybe something like below with states for all bots?
-            # bot_states = [0, 1, 2] where numbers            
+            # bot_states = [0, 1, 2] where numbers
             t1 = time.time()
             while time.time() - t1 < 60:
+                self.ballEngine.update()
                 activezone = self.zone_pass_plan[activezone_idx]
-   
+
                 if plan_length > activezone_idx + 1:
-                    rcvzone = self.zone_pass_plan[activezone_idx + 1]                    
+                    rcvzone = self.zone_pass_plan[activezone_idx + 1]
                 # no more rcvers!  time to shoot
                 else:
                     shoot_flag = True
@@ -193,16 +195,16 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 # TODO: get into position active player (if not in zone)!
                 activebot_idx = self.getNearestBotToZone(activezone)
                 activebot = self.bots[activebot_idx]
-                
+
                 # calculate path the bot has to follow
                 # TODO: maybe we should continuously calculate path in case state change
                 if not executing:
                     activeRobotConf = activebot.getRobotConf(activebot.bot)
-                    ballPos = self.ballEngine.getBallPose()
+                    ballRestPos = self.ballEngine.getNextRestPos()
                     finalBallPos = self.zone_centers[:, rcvzone - 1]
-                    activebot.path = passPath(activeRobotConf, ballPos, finalBallPos)
+                    activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
                     executing = True
-                
+
                 activebot.robotCode(STATE_FOLLOW_PATH)
 
                 ballPose = self.ballEngine.getBallPose()
@@ -212,7 +214,9 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     # increment what is the new active zone
                     activezone_idx += 1
                     executing = False # ready to plan the next execution
-                
+
+                time.sleep(50*1e-3)
+
         self.clean_exit()
 
 runner = ZonePasserMasterCyclic(ip='127.0.0.1')
