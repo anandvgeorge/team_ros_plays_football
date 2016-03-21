@@ -129,7 +129,7 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     path = np.concatenate((s, p, path), axis=1)
     return path, status
 
-def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, kq=0.002, k=0.036): 
+def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04): 
     """
     compute path and velocity for each node
     vr is the velocity of the robot in the circle, 
@@ -140,7 +140,7 @@ def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, kq=0.002, k=0.036)
     vmax = 25
     d = ((finalBallPos[0]-ballPos[0])**2+(finalBallPos[1]-ballPos[1])**2)**0.5
     vf = d/k
-    q = 0.04+kq*vf
+    q = q_bias+kq*vf
     theta = math.atan2(finalBallPos[1]-ballPos[1], finalBallPos[0]-ballPos[0])   # atan2(y, x)   
     finalConf = (ballPos[0], ballPos[1], theta)  
     path, status = smoothPath(robotConf, finalConf, r, q)
