@@ -140,7 +140,6 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         # final theta will be facing towards center field
         _ , final_theta = ThetaRange.cart2pol(final_x, final_y)
         final_theta = ThetaRange.normalize_angle(final_theta + np.pi) # flip it towards center
-        print "zone, theta: ", (desired_zone, final_theta)
         smooth_path, status = smoothPath(
             startSmoothPathConf,             # robotConf
             [final_x, final_y, final_theta], # finalConf
@@ -169,8 +168,6 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
                 self.planToMoveIntoReceivingPosition(idx, startSmoothPathConf)
                 self.bots[idx].add_delay(1*idx) # delay each by one second
-            for bot in self.bots:
-                print(bot.bot_name, bot.path)
 
             # TODO: replace system time with vrep simxTime
             t0 = time.time()
@@ -211,20 +208,24 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 # TODO: maybe we should continuously calculate path in case state change
                 if not executing:
                     activeRobotConf = activebot.getRobotConf(activebot.bot)
-                    ballRestPos = self.ballEngine.getNextRestPos()
+                    ballRestPos = self.ballEngine.getBallPose()
                     finalBallPos = self.zone_centers[:, rcvzone - 1]
                     activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
                     executing = True
 
                 activebot.robotCode(STATE_FOLLOW_PATH)
 
-                ballPose = self.ballEngine.getBallPose()
-                # ball has exited active zone, moving into receiving zone
+                p1 = self.ballEngine.getBallPose()
+                p2 = self.ballEngine.getNextRestPos()
                 # TODO: maybe add "velocity" compoenent to ballEngine to know when the ball has stopped
-                if self.getClosestZone(ballPose) != activezone:
-                    # increment what is the new active zone
-                    activezone_idx += 1
-                    executing = False # ready to plan the next execution
+                # ballPose has kinda achieved its expected resting position
+                dist_temp = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+                print "DistTemp: ", dist_temp
+                if self.getClosestZone(p1) != activezone:
+                    if dist_temp < 0.003:
+                        # increment what is the new active zone
+                        activezone_idx += 1
+                        executing = False # ready to plan the next execution
 
                 time.sleep(50*1e-3)
 
