@@ -40,7 +40,7 @@ class BallEngine:
         self.posm1 = self.getBallPose()
         self.tm1 = time.time()
         self.pos = self.getBallPose()
-        self.t = time.time()
+        self.t =  time.time()
         self.T = 2.15   # time constant in [s]
         vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming) 
 
@@ -62,7 +62,7 @@ class BallEngine:
         self.posm1 = self.pos
         self.tm1 = self.t
         self.pos = self.getBallPose()
-        self.t = self.getSimTime()
+        self.t = time.time() # self.getSimTime()
         
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
@@ -116,6 +116,8 @@ class BallEngine:
         return k0, t0 
         
     def getSimTime(self):
+        """ CURRENTLY BROKEN; problem, sometimes returns the same time from 
+        multiple calls, resulting in t, tm1, and tm2 being equal """
 #        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
         t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]        
         return t
