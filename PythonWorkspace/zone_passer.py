@@ -120,6 +120,36 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         dist_from_bots = cdist(zone_pose, bot_poses)
         return np.argmin(dist_from_bots)
 
+    def planToMoveIntoReceivingPosition(self, idx, startSmoothPathConf=None):
+        """ Move into the corner, facing center
+        Parameters
+        ----------
+        idx: integer
+            index of the robot (in self.bots)
+
+        startSmoothPathConf: array-like, shape (3,) or None
+            the start configuration of the robot to calculate the smooth path.
+            Pass this if you are calculating a path from a future point.
+            If None, then use current robot configuration.
+        """
+        if startSmoothPathConf is None:
+            startSmoothPathConf = self.bots[idx].getRobotConf()
+        desired_zone = self.zone_pass_plan[idx]
+        final_x = self.bots[idx].zone_corners[0, desired_zone - 1]
+        final_y = self.bots[idx].zone_corners[1, desired_zone - 1]
+        # final theta will be facing towards center field
+        _ , final_theta = ThetaRange.cart2pol(final_x, final_y)
+        final_theta = ThetaRange.normalize_angle(final_theta + np.pi) # flip it towards center
+        print "zone, theta: ", (desired_zone, final_theta)
+        smooth_path, status = smoothPath(
+            startSmoothPathConf,             # robotConf
+            [final_x, final_y, final_theta], # finalConf
+            r=0.01
+        )
+        v = 15*np.ones((1, np.size(smooth_path,1))) # 20 is default vel
+        smooth_path = np.concatenate((smooth_path, v), axis=0)
+        self.bots[idx].add_to_path(smooth_path)
+
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
@@ -137,26 +167,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 else:
                     startSmoothPathConf = self.bots[idx].getRobotConf(self.bots[idx].bot)
 
-                # smooth Path
-                desired_zone = self.zone_pass_plan[idx]
-                final_x = self.bots[idx].zone_corners[0, desired_zone - 1]
-                final_y = self.bots[idx].zone_corners[1, desired_zone - 1]
-                # final theta will be facing towards center field
-                _ , final_theta = ThetaRange.cart2pol(final_x, final_y)
-                final_theta = ThetaRange.normalize_angle(final_theta + np.pi) # flip it towards center
-                print "zone, theta: ", (desired_zone, final_theta)
-                smooth_path, status = smoothPath(
-                    startSmoothPathConf,             # robotConf
-                    [final_x, final_y, final_theta], # finalConf
-                    r=0.01
-                )
-                v = 15*np.ones((1, np.size(smooth_path,1))) # 20 is default vel
-                smooth_path = np.concatenate((smooth_path, v), axis=0)
-                self.bots[idx].add_to_path(smooth_path)
-
-                # vs direct path
-                # self.bots[idx].add_zone_destination(self.zone_pass_plan[idx])
-
+                self.planToMoveIntoReceivingPosition(idx, startSmoothPathConf)
                 self.bots[idx].add_delay(1*idx) # delay each by one second
             for bot in self.bots:
                 print(bot.bot_name, bot.path)
