@@ -274,7 +274,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         else:
                             xy2 = [0, -0.75]
                         finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
-                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, vr=10)
+                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=15, vr=10)
                         activebot.prunePath()
                         # FIXME: if the path produced is invalid, i.e some part of it is off the field and invalid
                         #        prune that part of the path to make it valid
