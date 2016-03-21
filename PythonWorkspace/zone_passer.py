@@ -7,6 +7,7 @@ import base_robot
 import numpy as np
 from scipy.spatial.distance import cdist
 import time
+import matplotlib.pyplot as plt
 from idash import IDash
 from robot_helpers import smoothPath, passPath, ThetaRange
 
@@ -65,6 +66,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
     def __init__(self, *args, **kwargs):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
+        self.idash = IDash(0.05)
         self.activezones = []
         self.receivingzones = []
         self.activeplayer = None
@@ -238,6 +240,25 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 rcvbot = self.bots[rcvbot_idx]
                 assert rcvbot_idx != activebot_idx
 
+                def vizZones():
+                    zones = np.zeros(4)
+                    zones[activezone-1] = 0.5
+                    zones[rcvzone-1] = 1.0
+                    plt.imshow(zones.reshape(2,2), interpolation='nearest')
+                    plt.title('Red = RCV, Green = Active')
+                self.idash.add(vizZones)
+
+                def vizBots():
+                    actx, acty = activebot.getRobotConf()[:2]
+                    rcvx, rcvy = rcvbot.getRobotConf()[:2]
+                    plt.hold('on')
+                    plt.plot(-acty, actx, 'go')
+                    plt.plot(-rcvy, rcvx, 'ro')
+                    plt.xlim([-0.75, 0.75]) # y axis in the field
+                    plt.ylim([-0.5, 0.5]) # x axis in the field
+                    plt.title('Red = RCV, Green = Active')
+                self.idash.add(vizBots)
+
                 # -- STATE MACHINE UPDATE PARAMETERS
                 if shoot_flag:
                     bot_states[activebot_idx] = STATE_SHOOT
@@ -297,11 +318,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             activeRobotConf = activebot.getRobotConf(activebot.bot)
                             ballRestPos = self.ballEngine.getBallPose()
                             finalBallPos = self.calculateShootingDestination()
-                            activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
+                            activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, r=0.02)
                             executing[idx] = True
                         self.bots[idx].robotCode()
 
-                time.sleep(50*1e-3)
+                self.idash.plotframe()
+                # time.sleep(50*1e-3)
 
         self.clean_exit()
 
