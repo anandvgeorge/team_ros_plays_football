@@ -111,7 +111,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         else:
             return zone_as_array[0] # the first, if there are multiple in that zone
 
-    def getNearestBotToZone(self, zone):
+    def getNearestBotToZone(self, zone, bot_to_ignore=None):
         """ Returns the index of the bot closest to the zone, even if the bot
         may not be directly inside the zone """
         bot_poses = np.vstack([bot.getRobotConf() for bot in self.bots])
@@ -119,7 +119,14 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         assert bot_poses.shape == (len(self.bots), 2)
         zone_pose = self.zone_corners[:, zone - 1].reshape(1, 2)
         dist_from_bots = cdist(zone_pose, bot_poses)
-        return np.argmin(dist_from_bots)
+        if bot_to_ignore is None:
+            return np.argmin(dist_from_bots)
+        else: # the closest bot might be active, in which case we should return next closest
+            sortedargs = np.argsort(dist_from_bots.flatten())
+            if sortedargs[0] == bot_to_ignore: # first closest is active, not valid to be receive
+                return sortedargs[1] # return second closest
+            else:
+                return sortedargs[0]
 
     def planToMoveIntoReceivingPosition(self, idx, startSmoothPathConf=None):
         """ Move into the corner, facing center
@@ -219,14 +226,19 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 else:
                     shoot_flag = True
 
-                # get into position receiving player
-                rcvbot_idx = self.getNearestBotToZone(rcvzone)
-                # TODO: get into position receiving bot! (if not in zone)
-                rcvbot = self.bots[rcvbot_idx]
-
                 # TODO: get into position active player (if not in zone)!
+                # If we move the receiving player correctly, the activebot should be nearest to the active zone
                 activebot_idx = self.getNearestBotToZone(activezone)
                 activebot = self.bots[activebot_idx]
+
+                # get into position receiving player
+                rcvbot_idx = self.getNearestBotToZone(rcvzone, bot_to_ignore=activebot_idx)
+                self.planToMoveIntoReceivingPosition(rcvbot_idx)
+                rcvbot = self.bots[rcvbot_idx]
+
+
+
+                assert rcvbot_idx != activebot_idx
 
                 # calculate path the bot has to follow
                 # TODO: maybe we should continuously calculate path in case state change
