@@ -11,7 +11,7 @@ from robot_helpers import smoothPath, passPath, ThetaRange
 
 STATE_FOLLOW_PATH = 0
 
-CORNER_X = 0.4
+CORNER_X = 0.375
 CORNER_Y = 0.55
 
 CENTER_X = 0.2
