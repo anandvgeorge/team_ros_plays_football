@@ -268,8 +268,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     if not executing[activebot_idx]:
                         activeRobotConf = activebot.getRobotConf(activebot.bot)
                         ballRestPos = self.ballEngine.getBallPose()
-                        # FIXME: when rcvbot is not in the receiving zone, the pass is incorrect!
-                        xy1 = rcvbot.getRobotConf()[:2]
+                        xy1 = self.zone_corners[:,rcvzone-1]
                         if next_rcvzone:
                             xy2 = self.zone_corners[:,next_rcvzone-1]
                         else:
