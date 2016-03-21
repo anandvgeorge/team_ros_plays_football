@@ -7,11 +7,12 @@ import base_robot
 import numpy as np
 from scipy.spatial.distance import cdist
 import time
+from idash import IDash
 from robot_helpers import smoothPath, passPath, ThetaRange
 
 STATE_FOLLOW_PATH = 0
 
-CORNER_X = 0.375
+CORNER_X = 0.385
 CORNER_Y = 0.55
 
 CENTER_X = 0.2
@@ -149,6 +150,24 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         smooth_path = np.concatenate((smooth_path, v), axis=0)
         self.bots[idx].add_to_path(smooth_path)
 
+    def calculateReceivingDestination(self, xy1, xy2, k=0.2):
+        """ receiving BallPos should be between rcvbot and next passing zone
+        Parameters
+        ----------
+        xy1: array-like, shape (2,)
+            x-y position of receiving bot
+        xy2: array-like, shape (2,)
+            x-y position of next receiving zone
+        k: float, between 0-1
+            multiplier to determine how much in between the rcv and nextrcv
+        """
+        x1, y1 = xy1
+        x2, y2 = xy2
+        theta = np.arctan2(y1 - y2, x1 - x2)
+        hyp = np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+        rcvBallPos = [x1 - k*hyp*np.cos(theta), y1 - k*hyp*np.sin(theta)]
+        return rcvBallPos
+
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
@@ -172,7 +191,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             # TODO: replace system time with vrep simxTime
             t0 = time.time()
             # get the bots into position
-            while time.time() - t0 < 15:
+            while time.time() - t0 < 10:
                 for bot in self.bots:
                     if time.time() - t0 >= bot.delay:
                         bot.robotCode(STATE_FOLLOW_PATH)
@@ -188,6 +207,11 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             while time.time() - t1 < 60:
                 self.ballEngine.update()
                 activezone = self.zone_pass_plan[activezone_idx]
+
+                if plan_length > activezone_idx + 2:
+                    next_rcvzone = self.zone_pass_plan[activezone_idx + 2]
+                else:
+                    next_rcvzone = None
 
                 if plan_length > activezone_idx + 1:
                     rcvzone = self.zone_pass_plan[activezone_idx + 1]
@@ -209,7 +233,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 if not executing:
                     activeRobotConf = activebot.getRobotConf(activebot.bot)
                     ballRestPos = self.ballEngine.getBallPose()
-                    finalBallPos = self.zone_centers[:, rcvzone - 1]
+
+                    # final ball position should be between receiving player and next receiving zone
+                    xy1 = rcvbot.getRobotConf()[:2]
+                    xy2 = self.zone_corners[:,next_rcvzone-1]
+                    finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
+
                     activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
                     executing = True
 
