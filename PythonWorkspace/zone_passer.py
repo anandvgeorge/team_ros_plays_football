@@ -11,14 +11,18 @@ from robot_helpers import smoothPath, passPath, ThetaRange
 
 STATE_FOLLOW_PATH = 0
 
+CORNER_X = 0.4
+CORNER_Y = 0.55
+
+CENTER_X = 0.2
+CENTER_Y = 0.45
+
 class ZonePasserCyclic(base_robot.BaseRobotRunner):
 
     # zone_corners[0] returns zone location 1 from the diagram in the slides
-    loc_x = 0.3
-    loc_y = 0.6
-    zone_corners = np.array([[loc_x, loc_x, -loc_x, -loc_x],
-                               [loc_y, -loc_y, loc_y, -loc_y],
-                               [20, 20, 20, 20]])
+    zone_corners = np.array([[CORNER_X, CORNER_X, -CORNER_X, -CORNER_X],
+                             [CORNER_Y, -CORNER_Y, CORNER_Y, -CORNER_Y],
+                             [20, 20, 20, 20]])
 
     def __init__(self, *args, **kwargs):
         super(ZonePasserCyclic, self).__init__(*args, **kwargs)
@@ -68,15 +72,11 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                       (-1,  1): 3,
                       (-1, -1): 4}
 
-        loc_x = 0.1
-        loc_y = 0.45
-        self.zone_centers = np.array([[loc_x, loc_x, -loc_x, -loc_x],
-                                        [loc_y, -loc_y, loc_y, -loc_y],])
+        self.zone_centers = np.array([[CENTER_X, CENTER_X, -CENTER_X, -CENTER_X],
+                                      [CENTER_Y, -CENTER_Y, CENTER_Y, -CENTER_Y]])
 
-        loc_x = 0.3
-        loc_y = 0.6
-        self.zone_corners = np.array([[loc_x, loc_x, -loc_x, -loc_x],
-                                      [loc_y, -loc_y, loc_y, -loc_y]])
+        self.zone_corners = np.array([[CORNER_X, CORNER_X, -CORNER_X, -CORNER_X],
+                                      [CORNER_Y, -CORNER_Y, CORNER_Y, -CORNER_Y]])
 
         # TODO: remove me since we're not allowed to set the ball pose
         # start ball at zone 4 - 1 (0 indexed)
@@ -163,7 +163,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             # TODO: replace system time with vrep simxTime
             t0 = time.time()            
             # get the bots into position
-            while time.time() - t0 < 15:
+            while time.time() - t0 < 10:
                 for bot in self.bots:
                     if time.time() - t0 >= bot.delay:
                         bot.robotCode(STATE_FOLLOW_PATH)
@@ -188,12 +188,10 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 # get into position receiving player
                 rcvbot_idx = self.getNearestBotToZone(rcvzone)
                 # TODO: get into position receiving bot! (if not in zone)
-#                assert rcvbot_idx is not None   
                 rcvbot = self.bots[rcvbot_idx]
 
                 # TODO: get into position active player (if not in zone)!
                 activebot_idx = self.getNearestBotToZone(activezone)
-#                assert activebot_idx is not None
                 activebot = self.bots[activebot_idx]
                 
                 # calculate path the bot has to follow
