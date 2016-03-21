@@ -10,7 +10,9 @@ import time
 from idash import IDash
 from robot_helpers import smoothPath, passPath, ThetaRange
 
-STATE_FOLLOW_PATH = 0
+STATE_READY_POS = 0
+STATE_PASS = 1
+STATE_SHOOT = 2
 
 CORNER_X = 0.385
 CORNER_Y = 0.55
@@ -48,14 +50,13 @@ class ZonePasserCyclic(base_robot.BaseRobotRunner):
     def add_delay(self, delay):
         self.delay = delay
 
-    def robotCode(self, state):
+    def robotCode(self):
         """ For Robots using a cyclic executor,
         robotCode should return in a small amount of time
         (i.e. NOT be implemented with a while loop)
         """
-        if state==STATE_FOLLOW_PATH:
-            robotConf = self.getRobotConf(self.bot)
-            self.followPath(robotConf)
+        robotConf = self.getRobotConf(self.bot)
+        self.followPath(robotConf)
 
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
@@ -175,6 +176,11 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         rcvBallPos = [x1 - k*hyp*np.cos(theta), y1 - k*hyp*np.sin(theta)]
         return rcvBallPos
 
+    def calculateShootingDestination(self):
+        # TODO: Intelligently use position of moving opponenet goalie
+        posToAim = [0, -0.75] # in the center of the goal
+        return posToAim
+
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
@@ -201,28 +207,26 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             while time.time() - t0 < 10:
                 for bot in self.bots:
                     if time.time() - t0 >= bot.delay:
-                        bot.robotCode(STATE_FOLLOW_PATH)
+                        bot.robotCode()
 
             # follow the zone passing plan
             activezone_idx = 0
             shoot_flag = False
             plan_length = len(self.zone_pass_plan)
-            executing = False
+            executing = [False] * len(self.bots)
             # TODO: maybe something like below with states for all bots?
-            # bot_states = [0, 1, 2] where numbers
+            bot_states = [STATE_READY_POS] * len(self.bots)
             t1 = time.time()
             while time.time() - t1 < 60:
                 self.ballEngine.update()
-                activezone = self.zone_pass_plan[activezone_idx]
 
+                activezone = self.zone_pass_plan[activezone_idx]
                 if plan_length > activezone_idx + 2:
                     next_rcvzone = self.zone_pass_plan[activezone_idx + 2]
                 else:
                     next_rcvzone = None
-
                 if plan_length > activezone_idx + 1:
                     rcvzone = self.zone_pass_plan[activezone_idx + 1]
-                # no more rcvers!  time to shoot
                 else:
                     shoot_flag = True
 
@@ -230,43 +234,71 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 # If we move the receiving player correctly, the activebot should be nearest to the active zone
                 activebot_idx = self.getNearestBotToZone(activezone)
                 activebot = self.bots[activebot_idx]
-
-                # get into position receiving player
                 rcvbot_idx = self.getNearestBotToZone(rcvzone, bot_to_ignore=activebot_idx)
-                self.planToMoveIntoReceivingPosition(rcvbot_idx)
                 rcvbot = self.bots[rcvbot_idx]
-
-
-
                 assert rcvbot_idx != activebot_idx
 
-                # calculate path the bot has to follow
-                # TODO: maybe we should continuously calculate path in case state change
-                if not executing:
-                    activeRobotConf = activebot.getRobotConf(activebot.bot)
-                    ballRestPos = self.ballEngine.getBallPose()
+                # -- STATE MACHINE UPDATE PARAMETERS
+                if shoot_flag:
+                    bot_states[activebot_idx] = STATE_SHOOT
+                else:
+                    bot_states[activebot_idx] = STATE_PASS
+                for idx in range(len(self.bots)):
+                    if idx != activebot_idx:
+                        bot_states[idx] = STATE_READY_POS
 
-                    # final ball position should be between receiving player and next receiving zone
-                    xy1 = rcvbot.getRobotConf()[:2]
-                    xy2 = self.zone_corners[:,next_rcvzone-1]
-                    finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
+                print executing
+                print bot_states
 
-                    activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
-                    executing = True
+                # -- STATE MACHINE EXECUTE
+                for idx in range(len(self.bots)):
+                    if bot_states[idx] == STATE_READY_POS:
+                        p1 = np.array(self.bots[idx].getRobotConf()[:2])
+                        p2 = self.zone_corners[:, self.getClosestZone(p1) - 1]
+                        # not yet in position
+                        if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.01:
+                            if not executing[idx]:
+                                self.planToMoveIntoReceivingPosition(idx)
+                                executing[idx] = True
+                            self.bots[idx].robotCode()
+                        # in position
+                        else:
+                            executing[idx] = False
+                            continue
 
-                activebot.robotCode(STATE_FOLLOW_PATH)
+                    elif bot_states[idx] == STATE_PASS:
+                        if not executing[idx]:
+                            activeRobotConf = activebot.getRobotConf(activebot.bot)
+                            ballRestPos = self.ballEngine.getBallPose()
+                            xy1 = rcvbot.getRobotConf()[:2]
+                            if next_rcvzone:
+                                xy2 = self.zone_corners[:,next_rcvzone-1]
+                            else:
+                                xy2 = [0, -0.75]
+                            finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
+                            activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
+                            executing[idx] = True
+                        self.bots[idx].robotCode()
 
-                p1 = self.ballEngine.getBallPose()
-                p2 = self.ballEngine.getNextRestPos()
-                # TODO: maybe add "velocity" compoenent to ballEngine to know when the ball has stopped
-                # ballPose has kinda achieved its expected resting position
-                dist_temp = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-                print "DistTemp: ", dist_temp
-                if self.getClosestZone(p1) != activezone:
-                    if dist_temp < 0.003:
-                        # increment what is the new active zone
-                        activezone_idx += 1
-                        executing = False # ready to plan the next execution
+                        p1 = self.ballEngine.getBallPose()
+                        p2 = self.ballEngine.getNextRestPos()
+                        # TODO: maybe add "velocity" compoenent to ballEngine to know when the ball has stopped
+                        # ballPose has kinda achieved its expected resting position
+                        dist_temp = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+                        if self.getClosestZone(p1) != activezone:
+                            if dist_temp < 0.003:
+                                # increment what is the new active zone
+                                activezone_idx += 1
+                                executing = [False] * len(self.bots) # everyone has new roles, so should first plan
+                                break
+
+                    elif bot_states[idx] == STATE_SHOOT:
+                        if not executing[idx]:
+                            activeRobotConf = activebot.getRobotConf(activebot.bot)
+                            ballRestPos = self.ballEngine.getBallPose()
+                            finalBallPos = self.calculateShootingDestination()
+                            activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
+                            executing[idx] = True
 
                 time.sleep(50*1e-3)
 
