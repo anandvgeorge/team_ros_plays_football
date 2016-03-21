@@ -154,7 +154,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             [final_x, final_y, final_theta], # finalConf
             r=0.01
         )
-        v = 15*np.ones((1, np.size(smooth_path,1))) # 20 is default vel
+        v = 10*np.ones((1, np.size(smooth_path,1))) # 20 is default vel
         smooth_path = np.concatenate((smooth_path, v), axis=0)
         self.bots[idx].add_to_path(smooth_path)
 
@@ -204,7 +204,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             # TODO: replace system time with vrep simxTime
             t0 = time.time()
             # get the bots into position
-            while time.time() - t0 < 10:
+            while time.time() - t0 < 15:
                 for bot in self.bots:
                     if time.time() - t0 >= bot.delay:
                         bot.robotCode()
@@ -256,7 +256,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         p1 = np.array(self.bots[idx].getRobotConf()[:2])
                         p2 = self.zone_corners[:, self.getClosestZone(p1) - 1]
                         # not yet in position
-                        if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.01:
+                        if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.03:
                             if not executing[idx]:
                                 self.planToMoveIntoReceivingPosition(idx)
                                 executing[idx] = True
@@ -299,6 +299,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             finalBallPos = self.calculateShootingDestination()
                             activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
                             executing[idx] = True
+                        self.bots[idx].robotCode()
 
                 time.sleep(50*1e-3)
 
