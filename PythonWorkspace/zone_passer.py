@@ -304,13 +304,14 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
                         p1 = self.ballEngine.getBallPose()
                         p2 = self.ballEngine.getNextRestPos()
-                        # TODO: maybe add "velocity" compoenent to ballEngine to know when the ball has stopped
                         # ballPose has kinda achieved its expected resting position
                         dist_temp = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-                        if self.getClosestZone(p1) != activezone:
-                            if dist_temp < 0.003:
-                                # increment what is the new active zone
-                                activezone_idx += 1
+                        closest_zone = self.getClosestZone(p1)
+                        if closest_zone != activezone:
+                            if dist_temp < 0.003: # wait til velocity reaches zero
+                                if closest_zone == rcvzone: # success
+                                    # increment what is the new active zone
+                                    activezone_idx += 1
                                 executing = [False] * len(self.bots) # everyone has new roles, so should first plan
                                 break
 
