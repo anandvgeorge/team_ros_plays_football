@@ -28,7 +28,7 @@ class GracefulKiller:
         self.kill_now = True
 
 class BallEngine:
-    
+
     def __init__(self, clientID):
         self.clientID = clientID
         _, self.handle=vrep.simxGetObjectHandle(
@@ -42,7 +42,7 @@ class BallEngine:
         self.pos = self.getBallPose()
         self.t =  time.time()
         self.T = 2.15   # time constant in [s]
-        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming) 
+        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming)
 
     def getBallPose(self):
         _, xyz = vrep.simxGetObjectPosition(
@@ -63,7 +63,7 @@ class BallEngine:
         self.tm1 = self.t
         self.pos = self.getBallPose()
         self.t = time.time() # self.getSimTime()
-        
+
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
             model: d(t) = d0 + k0*(1-exp(-(t-t0)/T)), T = 2.15 [s]
@@ -71,7 +71,7 @@ class BallEngine:
 #        print 'posm2'
 #        print self.posm2
 #        print 'posm1'
-#        print self.posm1        
+#        print self.posm1
 #        print 'pos'
 #        print self.pos
 #        print 'tm2'
@@ -85,7 +85,7 @@ class BallEngine:
         k0, t0  = self.getModel()
         u = [(self.pos[0]-self.posm2[0])/norm, (self.pos[1]-self.posm2[1])/norm]
         restPos = [self.posm2[0]+k0*u[0], self.posm2[1]+k0*u[1]]
-        return restPos      
+        return restPos
 
     def getModel(self):
         """ return the next ball position at rest and the time to reach it,
@@ -95,7 +95,7 @@ class BallEngine:
             for 3 point, i=1,2,3:
             di(ti) = k0*(1-exp(-(ti-t0)/T))
             2 unknows: t0, k0, (T is always the same)
-            
+
         """
         tol = 0.00001
         d1 = ((self.posm1[0]-self.posm2[0])**2+(self.posm1[1]-self.posm2[1])**2)**0.5
@@ -113,17 +113,17 @@ class BallEngine:
 #        else:
 #            t0 = self.T*math.log(cte)
         t0 = 0
-        return k0, t0 
-        
+        return k0, t0
+
     def getSimTime(self):
-        """ CURRENTLY BROKEN; problem, sometimes returns the same time from 
+        """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
 #        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
-        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]        
+        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
         return t
-        
 
-        
+
+
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
@@ -252,7 +252,7 @@ class BaseRobotRunner(object):
             vRobot = v2Pos(robotConf, self.path[0:2,0], self.path[2,0])
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
-            
+
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
