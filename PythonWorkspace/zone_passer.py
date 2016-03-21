@@ -5,6 +5,7 @@ of the playing field.
 import vrep
 import base_robot
 import numpy as np
+from scipy.spatial.distance import cdist
 import time
 from robot_helpers import smoothPath, passPath, ThetaRange
 
@@ -72,6 +73,11 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         self.zone_centers = np.array([[loc_x, loc_x, -loc_x, -loc_x],
                                         [loc_y, -loc_y, loc_y, -loc_y],])
 
+        loc_x = 0.3
+        loc_y = 0.6
+        self.zone_corners = np.array([[loc_x, loc_x, -loc_x, -loc_x],
+                                      [loc_y, -loc_y, loc_y, -loc_y]])
+
         # TODO: remove me since we're not allowed to set the ball pose
         # start ball at zone 4 - 1 (0 indexed)
         ball_start = self.zone_centers[:,3]
@@ -83,12 +89,15 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     def getClosestZone(self, pose):
         """ get zone which the current pose is closest to. This pose could
         be a ball, an opposing player, etc. """
-        sgn_x = np.sign(pose[0])
-        sgn_y = np.sign(pose[1])
-        return self.zones[(sgn_x, sgn_y)]
+        pose = np.array(pose[:2]) # x-y only
+        assert pose.size == 2 # pose should be 2-D
+        dist_from_zones = cdist(np.expand_dims(pose, axis=0), self.zone_corners.T)
+        return np.argmin(dist_from_zones) + 1 # zones are 1-indexed
 
     def getBotInZone(self, zone):
-        """ Returns the index of the bot which is inside the zone, otherwise None
+        """ 
+        Not using now        
+        Returns the index of the bot which is inside the zone, otherwise None
         if there is no bot inside this zone"""
         bot_zones = np.zeros(len(self.bots))
         for bot_idx, bot in enumerate(self.bots):
@@ -99,6 +108,16 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             return None
         else:
             return zone_as_array[0] # the first, if there are multiple in that zone
+
+    def getNearestBotToZone(self, zone):
+        """ Returns the index of the bot closest to the zone, even if the bot
+        may not be directly inside the zone """
+        bot_poses = np.vstack([bot.getRobotConf() for bot in self.bots])
+        bot_poses = bot_poses[:, :2]
+        assert bot_poses.shape == (len(self.bots), 2)
+        zone_pose = self.zone_corners[:, zone - 1].reshape(1, 2)
+        dist_from_bots = cdist(zone_pose, bot_poses)
+        return np.argmin(dist_from_bots)
 
     def run(self):
         if self.clientID!=-1:
@@ -167,14 +186,14 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     shoot_flag = True
 
                 # get into position receiving player
-                rcvbot_idx = self.getBotInZone(rcvzone)
+                rcvbot_idx = self.getNearestBotToZone(rcvzone)
                 # TODO: get into position receiving bot! (if not in zone)
-                assert rcvbot_idx is not None                
+#                assert rcvbot_idx is not None   
                 rcvbot = self.bots[rcvbot_idx]
 
                 # TODO: get into position active player (if not in zone)!
-                activebot_idx = self.getBotInZone(activezone)
-                assert activebot_idx is not None
+                activebot_idx = self.getNearestBotToZone(activezone)
+#                assert activebot_idx is not None
                 activebot = self.bots[activebot_idx]
                 
                 # calculate path the bot has to follow
