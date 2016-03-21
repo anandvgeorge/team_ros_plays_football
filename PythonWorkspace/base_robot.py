@@ -264,7 +264,7 @@ class BaseRobotRunner(object):
         else:
             self.path = path_objective
 
-    def prunePath(self, xlim=0.48, ylim=0.7):
+    def prunePath(self, xlim=0.45, ylim=0.7):
         """ Removes elements in the path if they are not within the bounds.
         Changes the self.path attribute according to this pruning.
 
@@ -279,7 +279,7 @@ class BaseRobotRunner(object):
         pruned_path = []
         for idx in range(self.path.shape[1]):
             # within the boundary
-            if np.abs(self.path[0,idx]) < xlim or np.abs(self.path[1,idx]) < ylim:
+            if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
                 pruned_path.append(self.path[:,idx])
         self.path = np.column_stack(pruned_path)
 
