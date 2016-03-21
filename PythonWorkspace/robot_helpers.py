@@ -129,15 +129,17 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     path = np.concatenate((s, p, path), axis=1)
     return path, status
 
-def passPath(robotConf, ballPos, finalBallPos, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04):
+def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04):
     """
     compute path and velocity for each node
+    vmax is max velocity we want the robot to achieve for the point of motion
     vr is the velocity of the robot in the circle,
     r is the radius of the circle,
     kq is the coeaff to create the distance q from the ballPos to the circle tangeant point,
     k is the coefficient for the ball model: d(t) = vrobot*k*(1-exp(-a*t))
+    q_bias is the additive term to create the distance q from the ballPos to the circle tangent point
+
     """
-    vmax = 25
     d = ((finalBallPos[0]-ballPos[0])**2+(finalBallPos[1]-ballPos[1])**2)**0.5
     vf = d/k
     q = q_bias+kq*vf
