@@ -150,7 +150,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         )
         v = vel*np.ones((1, np.size(smooth_path,1)))
         smooth_path = np.concatenate((smooth_path, v), axis=0)
-        self.bots[idx].add_to_path(smooth_path)
+        if self.bots[idx].path is None:
+            self.bots[idx].add_to_path(smooth_path)
+        elif self.bots[idx].path.shape[1] == 1:
+            self.bots[idx].add_to_path(smooth_path)
+        else:
+            self.bots[idx].path = smooth_path
 
     def calculateReceivingDestination(self, xy1, xy2, k=0.2):
         """ receiving BallPos should be between rcvbot and next passing zone
