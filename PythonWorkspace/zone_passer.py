@@ -248,17 +248,6 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     plt.title('Red = RCV, Green = Active')
                 self.idash.add(vizZones)
 
-                def vizBots():
-                    actx, acty = activebot.getRobotConf()[:2]
-                    rcvx, rcvy = rcvbot.getRobotConf()[:2]
-                    plt.hold('on')
-                    plt.plot(-acty, actx, 'go')
-                    plt.plot(-rcvy, rcvx, 'ro')
-                    plt.xlim([-0.75, 0.75]) # y axis in the field
-                    plt.ylim([-0.5, 0.5]) # x axis in the field
-                    plt.title('Red = RCV, Green = Active')
-                self.idash.add(vizBots)
-
                 # -- STATE MACHINE UPDATE PARAMETERS
                 if shoot_flag:
                     bot_states[activebot_idx] = STATE_SHOOT
@@ -297,7 +286,19 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             else:
                                 xy2 = [0, -0.75]
                             finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
-                            activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
+                            activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, q_bias=0.02)
+                            def vizBots():
+                                actx, acty = activebot.getRobotConf()[:2]
+                                rcvx, rcvy = rcvbot.getRobotConf()[:2]
+                                plt.hold('on')
+                                plt.plot(-acty, actx, 'go')
+                                plt.plot(-activebot.path[1,:], activebot.path[0,:], 'k.')
+                                plt.plot(-rcvy, rcvx, 'ro')
+                                plt.xlim([-0.75, 0.75]) # y axis in the field
+                                plt.ylim([-0.5, 0.5]) # x axis in the field
+                                plt.title('Red = RCV, Green = Active')
+                                plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
+                            self.idash.add(vizBots)
                             executing[idx] = True
                         self.bots[idx].robotCode()
 
