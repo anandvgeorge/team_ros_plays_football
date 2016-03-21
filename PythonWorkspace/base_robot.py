@@ -218,7 +218,9 @@ class BaseRobotRunner(object):
         """ OUR ROBOT CODE GOES HERE """
         return
 
-    def getRobotConf(self, robot_handle):
+    def getRobotConf(self, robot_handle=None):
+        if robot_handle is None:
+            robot_handle = self.bot
         _, xyz = vrep.simxGetObjectPosition(
             self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
         _, eulerAngles = vrep.simxGetObjectOrientation(
