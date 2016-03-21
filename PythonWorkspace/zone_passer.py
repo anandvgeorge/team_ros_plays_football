@@ -51,13 +51,13 @@ class ZonePasserCyclic(base_robot.BaseRobotRunner):
     def add_delay(self, delay):
         self.delay = delay
 
-    def robotCode(self):
+    def robotCode(self, rb=0.05):
         """ For Robots using a cyclic executor,
         robotCode should return in a small amount of time
         (i.e. NOT be implemented with a while loop)
         """
         robotConf = self.getRobotConf(self.bot)
-        self.followPath(robotConf)
+        self.followPath(robotConf, rb=rb)
 
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
@@ -300,7 +300,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                                 plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                             self.idash.add(vizBots)
                             executing[idx] = True
-                        self.bots[idx].robotCode()
+                        self.bots[idx].robotCode(rb=0.05)
 
                         p1 = self.ballEngine.getBallPose()
                         p2 = self.ballEngine.getNextRestPos()
