@@ -131,7 +131,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             else:
                 return sortedargs[0]
 
-    def planToMoveIntoReceivingPosition(self, idx, startSmoothPathConf=None):
+    def planToMoveIntoReceivingPosition(self, idx, rcvzone=None, startSmoothPathConf=None):
         """ Move into the corner, facing center
         Parameters
         ----------
@@ -145,9 +145,10 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         """
         if startSmoothPathConf is None:
             startSmoothPathConf = self.bots[idx].getRobotConf()
-        desired_zone = self.zone_pass_plan[idx]
-        final_x = self.bots[idx].zone_corners[0, desired_zone - 1]
-        final_y = self.bots[idx].zone_corners[1, desired_zone - 1]
+        if rcvzone is None:
+            rcvzone = self.zone_pass_plan[idx]
+        final_x = self.bots[idx].zone_corners[0, rcvzone - 1]
+        final_y = self.bots[idx].zone_corners[1, rcvzone - 1]
         # final theta will be facing towards center field
         _ , final_theta = ThetaRange.cart2pol(final_x, final_y)
         final_theta = ThetaRange.normalize_angle(final_theta + np.pi) # flip it towards center
@@ -200,7 +201,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 else:
                     startSmoothPathConf = self.bots[idx].getRobotConf(self.bots[idx].bot)
 
-                self.planToMoveIntoReceivingPosition(idx, startSmoothPathConf)
+                self.planToMoveIntoReceivingPosition(idx, startSmoothPathConf=startSmoothPathConf)
                 self.bots[idx].add_delay(1*idx) # delay each by one second
 
             # TODO: replace system time with vrep simxTime
@@ -263,12 +264,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 # -- STATE MACHINE EXECUTE
                 for idx in range(len(self.bots)):
                     if bot_states[idx] == STATE_READY_POS:
-                        p1 = np.array(self.bots[idx].getRobotConf()[:2])
-                        p2 = self.zone_corners[:, self.getClosestZone(p1) - 1]
+                        p1 = np.array(rcvbot.getRobotConf()[:2])
+                        p2 = self.zone_corners[:, rcvzone - 1]
                         # not yet in position
                         if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.03:
                             if not executing[idx]:
-                                self.planToMoveIntoReceivingPosition(idx)
+                                self.planToMoveIntoReceivingPosition(idx, rcvzone)
                                 executing[idx] = True
                             self.bots[idx].robotCode()
                         # in position
@@ -295,9 +296,10 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                                 actx, acty = activebot.getRobotConf()[:2]
                                 rcvx, rcvy = rcvbot.getRobotConf()[:2]
                                 plt.hold('on')
-                                plt.plot(-acty, actx, 'go')
-                                plt.plot(-activebot.path[1,:], activebot.path[0,:], 'k.')
-                                plt.plot(-rcvy, rcvx, 'ro')
+                                plt.plot(-acty, actx, 'g+')
+                                plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
+                                plt.plot(-rcvy, rcvx, 'r+')
+                                plt.plot(-rcvbot.path[1,:], rcvbot.path[0,:], 'r.')
                                 plt.xlim([-0.75, 0.75]) # y axis in the field
                                 plt.ylim([-0.5, 0.5]) # x axis in the field
                                 plt.title('Red = RCV, Green = Active')
