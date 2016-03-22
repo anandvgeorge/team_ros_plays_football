@@ -13,7 +13,7 @@ import signal
 import threading
 
 from idash import IDash
-from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos
+from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, v2orientation
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -229,10 +229,23 @@ class BaseRobotRunner(object):
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
 
-    def followPath(self, robotConf, rb=0.05):
+    def followPath(self, robotConf, status=0, rb=0.05, dtheta=0.001):
         """ radius of the buffer zone
         """
         robotpos = np.array(robotConf)[0:2]
+        
+        if status==2 and self.path.shape[1]==2 and np.linalg.norm(robotpos - self.path[0:2,0])<rb:
+            print 'path'            
+            print self.path
+            theta = math.atan2(self.path[1,-1]-self.path[1,0], self.path[0,-1]-self.path[0,0])            
+            finalConf = (self.path[0,0], self.path[1,0],theta)
+            print 'finalConf'
+            print finalConf
+            vRobot = v2orientation(robotConf, finalConf)
+            self.setMotorVelocities(vRobot[0], vRobot[1])
+            if vRobot[1]==0:
+                self.path = self.path[:, 1:]    
+            return 2
         while self.path.shape[1]>1 and np.linalg.norm(robotpos - self.path[0:2,0])<rb :
             self.path = self.path[:, 1:]  # remove first node
         if self.path.shape[1]==1 and np.linalg.norm(robotpos - self.path[0:2,0])<rb :
@@ -243,6 +256,33 @@ class BaseRobotRunner(object):
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
             
+    def keepGoal(self,robotConf, y=0.7, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
+        tol=0.0001        
+        self.ballEngine.update()  
+        pm = self.ballEngine.posm2              # previous position
+        p = self.ballEngine.getBallPose()       # position
+        if math.fabs(p[1]-pm[1])<tol:       
+            finalPos=[0,y]
+            vRobot = v2Pos(robotConf, finalPos)
+            self.setMotorVelocities(vRobot[0], vRobot[1])
+            return 1
+        a = (y-pm[1])/(p[1]-pm[1])  # intersection: (x,y)^t = pm+a(p-pm) 
+        x = pm[0]+a*(p[0]-pm[0])  
+        if (x>goalLim):
+            x = goalLim
+        if (x<-goalLim):
+            x = -goalLim
+        finalPos=[x,y]
+        print 'pm'
+        print pm
+        print 'p'
+        print p
+        print 'goalPos'
+        print finalPos
+        vRobot = v2Pos(robotConf, finalPos)
+        self.setMotorVelocities(vRobot[0], vRobot[1])
+        return 0
+        
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
