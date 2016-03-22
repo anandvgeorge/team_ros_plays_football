@@ -289,7 +289,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             xy2 = self.zone_centers[:,next_rcvzone-1]
                         else:
                             xy2 = [0, -0.75]
-                        finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.05)
+                        finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.15)
 
                         # -- simple calculation of finalBallPos
                         # mult_x, mult_y = self.zonesigns[rcvzone-1]
@@ -320,7 +320,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             plt.xlabel('active path length: {}'.format(self.bots[activebot_idx].path.shape[1]))
                         self.idash.add(vizBots)
                         executing[activebot_idx] = True
-                    self.bots[activebot_idx].robotCode(rb=0.05)
+                    self.bots[activebot_idx].robotCode(rb=0.03)
 
                     p1 = self.ballEngine.getBallPose()
                     p3 = self.ballEngine.getNextRestPos()
@@ -342,9 +342,19 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         activeRobotConf = self.bots[activebot_idx].getRobotConf(self.bots[activebot_idx].bot)
                         ballRestPos = self.ballEngine.getBallPose()
                         finalBallPos = self.calculateShootingDestination()
-                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.005)
+                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.0035)
                         executing[activebot_idx] = True
                     self.bots[activebot_idx].robotCode()
+                    def vizShooting():
+                        actx, acty = self.bots[activebot_idx].getRobotConf()[:2]
+                        plt.hold('on')
+                        plt.plot(-acty, actx, 'g+')
+                        plt.plot(-self.bots[activebot_idx].path[1,:], self.bots[activebot_idx].path[0,:], 'g.')
+                        plt.xlim([-0.75, 0.75]) # y axis in the field
+                        plt.ylim([-0.5, 0.5]) # x axis in the field
+                        plt.title('SHOOT!!!!')
+                    self.idash.add(vizShooting)
+
 
                 self.idash.plotframe()
                 # time.sleep(50*1e-3)
