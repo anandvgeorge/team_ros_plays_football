@@ -57,7 +57,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
     def __init__(self, *args, **kwargs):
         super(ZonePasserMasterCyclic, self).__init__(*args, **kwargs)
-        self.idash = IDash(0.05)
+        self.idash = IDash(0.005)
         self.activezones = []
         self.receivingzones = []
         self.activeplayer = None
@@ -80,7 +80,9 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         self.ballEngine.setBallPose(ball_start)
         self.ballEngine.update()
 
+        # FIXME: Hardcoded is good for drill, not good for game!
         self.zone_pass_plan = [4, 2, 1, 3, 4, 2] # the locations between the 5 passes
+        self.activebot_idx_plan = [0, 1, 2, 0, 1, 2] # which robot should take the active zone during the zone pass plan?
 
     def getClosestZone(self, pose):
         """ get zone which the current pose is closest to. This pose could
@@ -220,22 +222,22 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                 self.ballEngine.update()
 
                 activezone = self.zone_pass_plan[activezone_idx]
+                activebot_idx = self.activebot_idx_plan[activezone_idx]
+                activebot = self.bots[activebot_idx]
+                if plan_length > activezone_idx + 1:
+                    rcvzone = self.zone_pass_plan[activezone_idx + 1]
+                    rcvbot_idx = self.activebot_idx_plan[activezone_idx + 1]
+                    rcvbot = self.bots[rcvbot_idx]
+                else:
+                    rcvzone = None
+                    rcvbot_idx = None
+                    rcvbot = None
+                    shoot_flag = True
                 if plan_length > activezone_idx + 2:
                     next_rcvzone = self.zone_pass_plan[activezone_idx + 2]
                 else:
                     next_rcvzone = None
-                if plan_length > activezone_idx + 1:
-                    rcvzone = self.zone_pass_plan[activezone_idx + 1]
-                else:
-                    shoot_flag = True
 
-                # TODO: get into position active player (if not in zone)!
-                # If we move the receiving player correctly, the activebot should be nearest to the active zone
-                activebot_idx = self.getNearestBotToZone(activezone)
-                activebot = self.bots[activebot_idx]
-                rcvbot_idx = self.getNearestBotToZone(rcvzone, bot_to_ignore=activebot_idx)
-                rcvbot = self.bots[rcvbot_idx]
-                assert rcvbot_idx != activebot_idx
 
                 def vizZones():
                     zones = np.zeros(4)
@@ -250,35 +252,35 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     bot_states[activebot_idx] = STATE_SHOOT
                 else:
                     bot_states[activebot_idx] = STATE_PASS
-                bot_states[rcvbot_idx] = STATE_READY_POS
-
-                print bot_states
+                if rcvbot_idx:
+                    bot_states[rcvbot_idx] = STATE_READY_POS
 
                 # -- STATE MACHINE EXECUTE
-                if bot_states[rcvbot_idx] == STATE_READY_POS:
-                    p1 = np.array(rcvbot.getRobotConf()[:2])
-                    p2 = self.zone_corners[:, rcvzone - 1]
-                    # not yet in position
-                    if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.05: # radius buffer
-                        if not executing[rcvbot_idx]:
-                            self.planToMoveIntoReceivingPosition(rcvbot_idx, rcvzone)
-                            rcvbot.prunePath()
-                            executing[rcvbot_idx] = True
-                        rcvbot.robotCode(rb=0.05)
-                    else:
-                        executing[rcvbot_idx] = False
+                    if bot_states[rcvbot_idx] == STATE_READY_POS:
+                        p1 = np.array(rcvbot.getRobotConf()[:2])
+                        p2 = self.zone_corners[:, rcvzone - 1]
+                        # not yet in position
+                        if cdist(p1.reshape(1,2), p2.reshape(1,2))[0] > 0.05: # radius buffer
+                            if not executing[rcvbot_idx]:
+                                self.planToMoveIntoReceivingPosition(rcvbot_idx, rcvzone)
+                                rcvbot.prunePath()
+                                executing[rcvbot_idx] = True
+                            rcvbot.robotCode(rb=0.05)
+                        else:
+                            executing[rcvbot_idx] = False
 
                 if bot_states[activebot_idx] == STATE_PASS:
                     if not executing[activebot_idx]:
                         activeRobotConf = self.bots[activebot_idx].getRobotConf()
                         p0 = self.ballEngine.getBallPose()
-                        xy1 = self.zone_corners[:,rcvzone-1]
+                        xy1 = self.zone_centers[:,rcvzone-1]
                         if next_rcvzone:
-                            xy2 = self.zone_corners[:,next_rcvzone-1]
+                            xy2 = self.zone_centers[:,next_rcvzone-1]
                         else:
                             xy2 = [0, -0.75]
                         finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.25)
-                        self.bots[activebot_idx].path = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=10)
+                        # self.bots[activebot_idx].path = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=10)
+                        self.bots[activebot_idx].path = passPath(activeRobotConf, p0, finalBallPos)
                         self.bots[activebot_idx].prunePath()
                         p2 = self.ballEngine.getNextRestPos()
                         # FIXME: if the path produced is invalid, i.e some part of it is off the field and invalid
@@ -294,6 +296,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             plt.plot(-self.bots[activebot_idx].path[1,:], self.bots[activebot_idx].path[0,:], 'g.')
                             plt.plot(-rcvy, rcvx, 'r+')
                             plt.plot(-rcvbot.path[1,:], rcvbot.path[0,:], 'r.')
+                            plt.plot(-finalBallPos[1], finalBallPos[0], 'bo')
                             plt.xlim([-0.9, 0.9]) # y axis in the field
                             plt.ylim([-0.65, 0.65]) # x axis in the field
                             plt.title('Red = RCV, Green = Active')
@@ -305,12 +308,13 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     p1 = self.ballEngine.getBallPose()
                     p3 = self.ballEngine.getNextRestPos()
                     dist_from_start = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
-                    # dist_from_goal = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+                    dist_from_goal = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
                     velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
                     closest_zone = self.getClosestZone(p1)
 
                     if dist_from_start > 0.0001: # the ball has been touched
-                        if velocity_measure < 0.003: # wait til velocity reaches zero
+                         if velocity_measure < 0.003: # wait til velocity reaches zero
+#                        if dist_from_goal < 0.1: # wait til the ball has entered the predicted zone
                             executing = [False] * len(self.bots) # everyone has new roles, plan next pass
                             if closest_zone == rcvzone: # success
                                 # increment what is the new active zone
@@ -321,7 +325,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         activeRobotConf = self.bots[activebot_idx].getRobotConf(self.bots[activebot_idx].bot)
                         ballRestPos = self.ballEngine.getBallPose()
                         finalBallPos = self.calculateShootingDestination()
-                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, r=0.02)
+                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos)
                         executing[activebot_idx] = True
                     self.bots[activebot_idx].robotCode()
 
