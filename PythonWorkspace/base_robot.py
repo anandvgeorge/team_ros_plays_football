@@ -239,7 +239,7 @@ class BaseRobotRunner(object):
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
 
-    def followPath(self, robotConf, rb=0.05):
+    def followPath(self, robotConf, rb=0.05, k=3.5):
         """ radius of the buffer zone
         """
         robotpos = np.array(robotConf)[0:2]
@@ -249,7 +249,7 @@ class BaseRobotRunner(object):
             self.setMotorVelocities(0, 0)
             return 0
         else:
-            vRobot = v2Pos(robotConf, self.path[0:2,0], self.path[2,0])
+            vRobot = v2Pos(robotConf, self.path[0:2,0], self.path[2,0], k)
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
 
@@ -264,7 +264,7 @@ class BaseRobotRunner(object):
         else:
             self.path = path_objective
 
-    def prunePath(self, xlim=0.45, ylim=0.7):
+    def prunePath(self, xlim=0.455, ylim=0.705):
         """ Removes elements in the path if they are not within the bounds.
         Changes the self.path attribute according to this pruning.
 
