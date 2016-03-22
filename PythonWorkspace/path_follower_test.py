@@ -22,8 +22,9 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
     def robotCode(self):
         
-        self.path = np.array([[0.3, 0.3, -0.3, -0.3],
-                              [0.4, -0.4, -0.4, 0.4]])                          
+        self.path = np.array([[0.15, 0.15, -0.15, -0.15],
+                              [0.4, -0.4, -0.4, 0.4],
+                              [15, 15, 15, 15]])                          
 #        dash = IDash(framerate=0.1)            
 #        plt.plot(self.path[0,:], self.path[1,:])  
 #        dash.add(plt)

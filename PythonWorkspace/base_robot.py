@@ -74,7 +74,7 @@ class BallEngine:
 #        print self.t
         tol = 0.0001
         norm = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
-        if math.fabs(norm/(self.t-self.tm2))<tol:
+        if self.t-self.tm2<tol or math.fabs(norm/(self.t-self.tm2))<tol:
             return self.pos # too small velocity => ball already at rest
         k0, t0  = self.getModel()
         u = [(self.pos[0]-self.posm2[0])/norm, (self.pos[1]-self.posm2[1])/norm]
