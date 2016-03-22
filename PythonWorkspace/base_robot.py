@@ -28,7 +28,7 @@ class GracefulKiller:
         self.kill_now = True
 
 class BallEngine:
-    
+
     def __init__(self, clientID):
         self.clientID = clientID
         _, self.handle=vrep.simxGetObjectHandle(
@@ -40,24 +40,30 @@ class BallEngine:
         self.posm1 = self.getBallPose()
         self.tm1 = time.time()
         self.pos = self.getBallPose()
-        self.t = time.time()
+        self.t =  time.time()
         self.T = 2.15   # time constant in [s]
-        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming) 
+        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming)
 
     def getBallPose(self):
         _, xyz = vrep.simxGetObjectPosition(
             self.clientID, self.handle, -1, vrep.simx_opmode_buffer)
         x, y, z = xyz
         return [x, y]
-        
+
+    def setBallPose(self, positionxy):
+        position = np.concatenate((np.asarray(positionxy), np.array([z])))
+        _ = vrep.simxSetObjectPosition(
+            self.clientID, self.handle, -1, position, vrep.simx_opmode_oneshot
+        )
+
     def update(self):
         self.posm2 = self.posm1
         self.tm2 = self.tm1
         self.posm1 = self.pos
         self.tm1 = self.t
         self.pos = self.getBallPose()
-        self.t = self.getSimTime()
-        
+        self.t = time.time() # self.getSimTime()
+
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
             model: d(t) = d0 + k0*(1-exp(-(t-t0)/T)), T = 2.15 [s]
@@ -65,7 +71,7 @@ class BallEngine:
 #        print 'posm2'
 #        print self.posm2
 #        print 'posm1'
-#        print self.posm1        
+#        print self.posm1
 #        print 'pos'
 #        print self.pos
 #        print 'tm2'
@@ -79,7 +85,7 @@ class BallEngine:
         k0, t0  = self.getModel()
         u = [(self.pos[0]-self.posm2[0])/norm, (self.pos[1]-self.posm2[1])/norm]
         restPos = [self.posm2[0]+k0*u[0], self.posm2[1]+k0*u[1]]
-        return restPos      
+        return restPos
 
     def getModel(self):
         """ return the next ball position at rest and the time to reach it,
@@ -89,7 +95,7 @@ class BallEngine:
             for 3 point, i=1,2,3:
             di(ti) = k0*(1-exp(-(ti-t0)/T))
             2 unknows: t0, k0, (T is always the same)
-            
+
         """
         tol = 0.00001
         d1 = ((self.posm1[0]-self.posm2[0])**2+(self.posm1[1]-self.posm2[1])**2)**0.5
@@ -107,15 +113,17 @@ class BallEngine:
 #        else:
 #            t0 = self.T*math.log(cte)
         t0 = 0
-        return k0, t0 
-        
-    def getSimTime(self):
-#        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
-        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]        
-        return t
-        
+        return k0, t0
 
-        
+    def getSimTime(self):
+        """ CURRENTLY BROKEN; problem, sometimes returns the same time from
+        multiple calls, resulting in t, tm1, and tm2 being equal """
+#        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
+        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
+        return t
+
+
+
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
@@ -212,7 +220,9 @@ class BaseRobotRunner(object):
         """ OUR ROBOT CODE GOES HERE """
         return
 
-    def getRobotConf(self, robot_handle):
+    def getRobotConf(self, robot_handle=None):
+        if robot_handle is None:
+            robot_handle = self.bot
         _, xyz = vrep.simxGetObjectPosition(
             self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
         _, eulerAngles = vrep.simxGetObjectOrientation(
@@ -283,6 +293,37 @@ class BaseRobotRunner(object):
         self.setMotorVelocities(vRobot[0], vRobot[1])
         return 0
         
+
+    def add_to_path(self, path_objective):
+        """ path objective is array-like, shape (3,-1) """
+        path_objective = np.asarray(path_objective).reshape(3, -1)
+        if self.path is not None:
+            self.path = np.column_stack((
+                self.path,
+                path_objective
+            ))
+        else:
+            self.path = path_objective
+
+    def prunePath(self, xlim=0.45, ylim=0.7):
+        """ Removes elements in the path if they are not within the bounds.
+        Changes the self.path attribute according to this pruning.
+
+        Parameters
+        ----------
+        xlim: number
+            the magnitude of the bounds of the field in the x direction
+
+        ylim: number
+            the magnitude of the bounds of the field in the y direction
+        """
+        pruned_path = []
+        for idx in range(self.path.shape[1]):
+            # within the boundary
+            if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
+                pruned_path.append(self.path[:,idx])
+        self.path = np.column_stack(pruned_path)
+
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
