@@ -51,7 +51,7 @@ def vomega2bytecodes(v, omega, g, L=0.260):
     ctrl_sig_right = (v_comm + v_diff) / float(g)
     return ctrl_sig_left, ctrl_sig_right
 
-def v2Pos(robotConf, finalPos, v = 20, k=3.5):
+def v2Pos(robotConf, finalPos, v = 20, k=3.5, rb=0.03):
     """ return a velocity vector to achieve the
         given desired final position: finalPos[0]=x, finalPos[1]=y
         robotConf[0]=x, robotConf[1]=y, robotConf[2]=theta
@@ -60,7 +60,7 @@ def v2Pos(robotConf, finalPos, v = 20, k=3.5):
     x = finalPos[0] - robotConf[0]
     y = finalPos[1] - robotConf[1]
     norm = (x**2 + y**2)**.5    # euclidian norm
-    if norm == 0:
+    if norm < rb:
         vx = vy = 0
     else:
         vx = x * v / norm    # velocity normalization
@@ -71,6 +71,24 @@ def v2Pos(robotConf, finalPos, v = 20, k=3.5):
     rvt = -cos*vx-sin*vy   # robot forward velocity
     rvf = -sin*vx+cos*vy   # robot translational velocity ~~> ohmega
     return (rvf, k*rvt)   # robot velocity (forward, transaltional)
+
+def v2orientation(robotConf, finalConf, v = 20, k=3.5, rb=0.05, kr=15):
+    """ return a velocity vector to achieve the 
+        given desired final position: finalPos[0]=x, finalPos[1]=y 
+        robotConf[0]=x, robotConf[1]=y, robotConf[2]=theta 
+        v is the absolute velocity of the robot and 
+        k is the rotation gain 
+        rb radius of the buffer zone 
+        kr is the proportionnal coeff for the rotation"""
+    tol = 0.001
+    if ((robotConf[0]-finalConf[0])**2+(robotConf[1]-finalConf[1])**2)**0.5>rb:
+        return v2Pos(robotConf, finalConf, v, k)
+    theta = finalConf[2]-robotConf[2]-math.pi/2
+    if math.fabs(theta)>math.pi:
+        theta=2*math.pi-theta   
+    if math.fabs(theta)<tol:
+        return (0,0)     
+    return (0, kr*k*theta)   # robot velocity (forward, transaltional)
 
 def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025):
     """ inital configuration of the robot, final Configuration of the robot
@@ -102,13 +120,16 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     else:
         c = c2
         gamma = math.pi/2  # clockwise
-    b1 = math.atan2(c[1,0]-s[1,0], c[0,0]-s[0,0])   # atan2(y, x)
-    path = np.concatenate((t, g1), axis=1)
+    b1 = math.atan2(c[1,0]-s[1,0], c[0,0]-s[0,0])   # atan2(y, x)      
     if np.linalg.norm(s-c)<r+tol:   # robot inside the circle, no solution for tangeant
+        t = g-np.array([[1.5*q*cos],        # last point on the circle
+                        [1.5*q*sin]])
+        path = np.concatenate((t, g1), axis=1)        
         status=2
         return path, status
-    d = np.linalg.norm(s-c)
-    sgnG = np.sign(gamma)
+    path = np.concatenate((t, g1), axis=1)    
+    d = np.linalg.norm(s-c)    
+    sgnG = np.sign(gamma) 
     b2 = math.asin(r/d)*sgnG
     p = c+np.array([[r*np.cos(b1+b2+gamma)],    # first point on the circle
                   [r*np.sin(b1+b2+gamma)]])
@@ -151,9 +172,9 @@ def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002,
     path = np.concatenate((path, v), axis=0)
     path[-1, -1]=vf
     if (status==0):
-        path[-1, 0]=vmax
-        path[-1, 1]=vmax
-    return path
+        path[-1, 0]=vmax 
+        path[-1, 1]=vmax    
+    return path, status
 
 def calculatePathTime(path, kv=66.65):     #kv=66.65=vmot/vrobot
     """ return the estimated time for the robot to follow this path """

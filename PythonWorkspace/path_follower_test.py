@@ -22,8 +22,9 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
     def robotCode(self):
         
-        self.path = np.array([[0.3, 0.3, -0.3, -0.3],
-                              [0.4, -0.4, -0.4, 0.4]])                          
+        self.path = np.array([[0.2, 0.2, -0.2, -0.2],
+                              [0.4, -0.4, -0.4, 0.4],
+                              [15, 15, 15, 15]])                          
 #        dash = IDash(framerate=0.1)            
 #        plt.plot(self.path[0,:], self.path[1,:])  
 #        dash.add(plt)
@@ -31,7 +32,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         #k=0.0345    # ball model: d(t) = vmot*k*(1-exp(-t/T))
 
         goal = (0.0, 0.0)
-        self.path = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)
+        self.path, status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)
         print self.path
         
         dash = IDash(framerate=0.1)
@@ -40,13 +41,12 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         dash.plotframe()       
         print 'estimated time path'
         print calculatePathTime(self.path)
-        t = self.ballEngine.getSimTime()
         t = self.ballEngine.getSimTime()     # time in seconds
-        while (self.ballEngine.getSimTime()-t)<10: #End program after 30sec
-#        cc=1
-#        while cc:
+#        while (self.ballEngine.getSimTime()-t)<10: #End program after 30sec
+        cc=1
+        while cc:
             robotConf = self.getRobotConf(self.bot)            
-            cc = self.followPath(robotConf, rb=0.05) 
+            cc = self.followPath(robotConf, status, rb=0.05) 
             self.ballEngine.update()
             nextBallPos = self.ballEngine.getNextRestPos()
 #            robotConf = self.getRobotConf(self.bot)
