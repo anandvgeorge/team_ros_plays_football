@@ -66,6 +66,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                       ( 1, -1): 2,
                       (-1,  1): 3,
                       (-1, -1): 4}
+        self.zonesigns = [( 1,  1), ( 1, -1), (-1,  1), (-1, -1)]
 
         self.zone_centers = np.array([[CENTER_X, CENTER_X, -CENTER_X, -CENTER_X],
                                       [CENTER_Y, -CENTER_Y, CENTER_Y, -CENTER_Y]])
@@ -179,7 +180,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
     def calculateShootingDestination(self):
         # TODO: Intelligently use position of moving opponenet goalie
-        posToAim = [0, -0.75] # in the center of the goal
+        posToAim = [0, -0.1] # in the center of the goal
         return posToAim
 
     def run(self):
@@ -219,7 +220,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             # TODO: maybe something like below with states for all bots?
             bot_states = [STATE_READY_POS] * len(self.bots)
             t1 = time.time()
-            while time.time() - t1 < 180:
+            while time.time() - t1 < 1000:
                 self.ballEngine.update()
 
                 activezone = self.zone_pass_plan[activezone_idx]
@@ -268,7 +269,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                                 if next_rcvzone:
                                     xy2 = self.zone_centers[:,next_rcvzone-1]
                                 else:
-                                    xy2 = [0, -1.0]
+                                    xy2 = [0, -0.75]
                                 print("Plannning To Receive, 2nd Time")
                                 self.planToMoveIntoReceivingPosition(rcvbot_idx, rcvzone, vel=10)
                                 rcvbot.prunePath()
@@ -281,12 +282,19 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     if not executing[activebot_idx]:
                         activeRobotConf = self.bots[activebot_idx].getRobotConf()
                         p0 = self.ballEngine.getBallPose()
+
+                        # -- fancy calculation of finalBallPos, using info about where next
                         xy1 = self.zone_centers[:,rcvzone-1]
                         if next_rcvzone:
                             xy2 = self.zone_centers[:,next_rcvzone-1]
                         else:
                             xy2 = [0, -0.75]
                         finalBallPos = self.calculateReceivingDestination(xy1, xy2, k=0.05)
+
+                        # -- simple calculation of finalBallPos
+                        # mult_x, mult_y = self.zonesigns[rcvzone-1]
+                        # finalBallPos = [ np.abs(p0[0])*mult_x , np.abs(p0[1])*mult_y ]
+
                         self.bots[activebot_idx].path = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035)
                         self.bots[activebot_idx].prunePath()
                         p2 = self.ballEngine.getNextRestPos()
