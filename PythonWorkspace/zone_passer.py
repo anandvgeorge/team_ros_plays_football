@@ -183,7 +183,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
     def calculateShootingDestination(self):
         # TODO: Intelligently use position of moving opponenet goalie
-        posToAim = [0, -0.1] # in the center of the goal
+        posToAim = [0, -1.0] # in the center of the goal
         return posToAim
 
     def run(self):
