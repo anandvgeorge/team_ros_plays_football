@@ -42,13 +42,16 @@ class ZonePasserCyclic(base_robot.BaseRobotRunner):
     def add_delay(self, delay):
         self.delay = delay
 
-    def robotCode(self, rb=0.05, k=2.5):
+    def robotCode(self, rb=0.05, k=2.5, pause_before_kick=True):
         """ For Robots using a cyclic executor,
         robotCode should return in a small amount of time
         (i.e. NOT be implemented with a while loop)
         """
         robotConf = self.getRobotConf(self.bot)
-        return self.followPath(robotConf, rb=rb, k=k)
+        if pause_before_kick:
+            return self.followPath(robotConf, rb=rb, k=k, status=2)
+        else:
+            return self.followPath(robotConf, rb=rb, k=k, status=0)
 
 class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
     """After doing part A of Question 2, the ball will already be
@@ -295,7 +298,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         # mult_x, mult_y = self.zonesigns[rcvzone-1]
                         # finalBallPos = [ np.abs(p0[0])*mult_x , np.abs(p0[1])*mult_y ]
 
-                        self.bots[activebot_idx].path = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035)
+                        self.bots[activebot_idx].path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035)
                         self.bots[activebot_idx].prunePath()
                         p2 = self.ballEngine.getNextRestPos()
                         # FIXME: if the path produced is invalid, i.e some part of it is off the field and invalid
@@ -342,7 +345,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         activeRobotConf = self.bots[activebot_idx].getRobotConf(self.bots[activebot_idx].bot)
                         ballRestPos = self.ballEngine.getBallPose()
                         finalBallPos = self.calculateShootingDestination()
-                        activebot.path = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.0035)
+                        activebot.path, status = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.0035)
                         executing[activebot_idx] = True
                     self.bots[activebot_idx].robotCode()
                     def vizShooting():
