@@ -298,7 +298,12 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         # mult_x, mult_y = self.zonesigns[rcvzone-1]
                         # finalBallPos = [ np.abs(p0[0])*mult_x , np.abs(p0[1])*mult_y ]
 
-                        activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035, hold=True)
+                        # slow mode (tested)
+                        # activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035, hold=True)
+
+                        # fast mode (good luck!)
+                        activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=20, vr=15, kq=0.0010, hold=True)
+
                         activebot.prunePath()
                         activebot.pause_before_kick = activebot.path.shape[1] > 2
                         p2 = self.ballEngine.getNextRestPos()
