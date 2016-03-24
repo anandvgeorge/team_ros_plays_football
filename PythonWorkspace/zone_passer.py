@@ -262,24 +262,24 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     bot_states[rcvbot_idx] = STATE_READY_POS
 
                 # -- STATE MACHINE EXECUTE
-                    if bot_states[rcvbot_idx] == STATE_READY_POS:
-                        rcvp1 = np.array(rcvbot.getRobotConf()[:2])
-                        rcvp2 = self.zone_corners[:, rcvzone - 1]
-                        # not yet in position
-                        if cdist(rcvp1.reshape(1,2), rcvp2.reshape(1,2))[0] > 0.001: # radius buffer
-                            # FIXME: if receiving bot is moving at the same time as active bot, processing time increases by ~100ms
-                            if not executing[rcvbot_idx]:
-                                if next_rcvzone:
-                                    xy2 = self.zone_centers[:,next_rcvzone-1]
-                                else:
-                                    xy2 = [0, -0.75]
-                                self.planToMoveIntoReceivingPosition(rcvbot_idx, rcvzone, vel=10)
-                                rcvbot.prunePath()
-                                rcvbot.pause_before_kick = rcvbot.path.shape[1] > 2
-                                executing[rcvbot_idx] = True
-                            rcvbot.robotCode(rb=0.05, pause_before_kick=rcvbot.pause_before_kick)
-                        else:
-                            executing[rcvbot_idx] = False
+                    # if bot_states[rcvbot_idx] == STATE_READY_POS:
+                    #     rcvp1 = np.array(rcvbot.getRobotConf()[:2])
+                    #     rcvp2 = self.zone_corners[:, rcvzone - 1]
+                    #     # not yet in position
+                    #     if cdist(rcvp1.reshape(1,2), rcvp2.reshape(1,2))[0] > 0.001: # radius buffer
+                    #         # FIXME: if receiving bot is moving at the same time as active bot, processing time increases by ~100ms
+                    #         if not executing[rcvbot_idx]:
+                    #             if next_rcvzone:
+                    #                 xy2 = self.zone_centers[:,next_rcvzone-1]
+                    #             else:
+                    #                 xy2 = [0, -0.75]
+                    #             self.planToMoveIntoReceivingPosition(rcvbot_idx, rcvzone, vel=10)
+                    #             rcvbot.prunePath()
+                    #             rcvbot.pause_before_kick = rcvbot.path.shape[1] > 2
+                    #             executing[rcvbot_idx] = True
+                    #         rcvbot.robotCode(rb=0.05, pause_before_kick=rcvbot.pause_before_kick)
+                    #     else:
+                    #         executing[rcvbot_idx] = False
 
                 if bot_states[activebot_idx] == STATE_PASS:
                     if not executing[activebot_idx]:
