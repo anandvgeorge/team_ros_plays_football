@@ -245,12 +245,12 @@ class BaseRobotRunner(object):
         robotpos = np.array(robotConf)[0:2]
         
         if status==2 and self.path.shape[1]==2 and np.linalg.norm(robotpos - self.path[0:2,0])<rb:
-            print 'path'            
-            print self.path
+            # print 'path'            
+            # print self.path
             theta = math.atan2(self.path[1,-1]-self.path[1,0], self.path[0,-1]-self.path[0,0])            
             finalConf = (self.path[0,0], self.path[1,0],theta)
-            print 'finalConf'
-            print finalConf
+            # print 'finalConf'
+            # print finalConf
             vRobot = v2orientation(robotConf, finalConf)
             self.setMotorVelocities(vRobot[0], vRobot[1])
             if vRobot[1]==0:
