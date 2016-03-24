@@ -267,6 +267,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         rcvp2 = self.zone_corners[:, rcvzone - 1]
                         # not yet in position
                         if cdist(rcvp1.reshape(1,2), rcvp2.reshape(1,2))[0] > 0.001: # radius buffer
+                            # FIXME: if receiving bot is moving at the same time as active bot, processing time increases by ~100ms
                             if not executing[rcvbot_idx]:
                                 if next_rcvzone:
                                     xy2 = self.zone_centers[:,next_rcvzone-1]
@@ -336,7 +337,6 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     dist_from_goal = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
                     velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
                     closest_zone = self.getClosestZone(p1)
-
                     if dist_from_start > 0.01: # the ball has been touched
                          if velocity_measure < 0.003: # wait til velocity reaches zero
                          # if dist_from_goal < 0.1: # wait til the ball has entered the predicted zone
@@ -364,7 +364,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     self.idash.add(vizShooting)
 
 
-                self.idash.plotframe()
+                # self.idash.plotframe() # ~100 ms shaved by removing this line
                 # time.sleep(50*1e-3)
 
         self.clean_exit()
