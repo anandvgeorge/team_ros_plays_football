@@ -355,7 +355,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         activeRobotConf = activebot.getRobotConf(activebot.bot)
                         ballRestPos = self.ballEngine.getBallPose()
                         finalBallPos = self.calculateShootingDestination()
-                        activebot.path, status = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.0035, hold=True)
+                        activebot.path, status = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=25, vr=15, kq=0.0010, hold=True)
                         executing[activebot_idx] = True
                     activebot.robotCode()
                     def vizShooting():
