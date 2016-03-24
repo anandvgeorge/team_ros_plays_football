@@ -215,6 +215,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         bot.robotCode()
 
             # follow the zone passing plan
+            first_loop = True
             activezone_idx = 0
             shoot_flag = False
             plan_length = len(self.zone_pass_plan)
@@ -296,7 +297,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         # mult_x, mult_y = self.zonesigns[rcvzone-1]
                         # finalBallPos = [ np.abs(p0[0])*mult_x , np.abs(p0[1])*mult_y ]
 
-                        activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035)
+                        activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035, hold=True)
                         activebot.prunePath()
                         activebot.pause_before_kick = activebot.path.shape[1] > 2
                         p2 = self.ballEngine.getNextRestPos()
@@ -322,8 +323,13 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                         self.idash.add(vizBots)
                         executing[activebot_idx] = True
-                    activebot.robotCode(rb=0.03, pause_before_kick=activebot.pause_before_kick)
-
+                    if first_loop:
+                        pass
+                        first_loop = False
+                    else:
+                        print "Elapsed (MS): ", (time.time() - time_start) * 1e3
+                    activebot.robotCode(rb=0.05, pause_before_kick=activebot.pause_before_kick)
+                    time_start = time.time()
                     p1 = self.ballEngine.getBallPose()
                     p3 = self.ballEngine.getNextRestPos()
                     dist_from_start = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
@@ -344,7 +350,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         activeRobotConf = activebot.getRobotConf(activebot.bot)
                         ballRestPos = self.ballEngine.getBallPose()
                         finalBallPos = self.calculateShootingDestination()
-                        activebot.path, status = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.0035)
+                        activebot.path, status = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=10, vr=7, kq=0.0035, hold=True)
                         executing[activebot_idx] = True
                     activebot.robotCode()
                     def vizShooting():

@@ -83,9 +83,15 @@ def v2orientation(robotConf, finalConf, v = 20, k=3.5, rb=0.05, kr=15):
     tol = 0.001
     if ((robotConf[0]-finalConf[0])**2+(robotConf[1]-finalConf[1])**2)**0.5>rb:
         return v2Pos(robotConf, finalConf, v, k)
-    theta = finalConf[2]-robotConf[2]-math.pi/2
-    if math.fabs(theta)>math.pi:
-        theta=2*math.pi-theta   
+
+    # -- old computation of angular difference
+    # theta = finalConf[2]-robotConf[2]-math.pi/2
+    # if math.fabs(theta)>math.pi:
+    #     theta=2*math.pi-theta   
+
+    # -- non buggy computation of angular difference
+    theta = ThetaRange.angleDiff(finalConf[2]-math.pi/2, robotConf[2])
+
     if math.fabs(theta)<tol:
         return (0,0)     
     return (0, kr*k*theta)   # robot velocity (forward, transaltional)
@@ -150,7 +156,7 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     path = np.concatenate((s, p, path), axis=1)
     return path, status
 
-def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04):
+def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04, hold=False):
     """
     compute path and velocity for each node
     vmax is max velocity we want the robot to achieve for the point of motion
@@ -171,6 +177,28 @@ def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002,
     v = vr*np.ones((1, np.size(path,1)))
     path = np.concatenate((path, v), axis=0)
     path[-1, -1]=vf
+
+    # if we should hold onto the ball while kicking (inspired by other group)
+    if hold:
+        g = np.array([[finalConf[0]],   # goal
+                      [finalConf[1]]])
+        cos = math.cos(finalConf[2])
+        sin = math.sin(finalConf[2])
+        after_goal = []
+        before_goal = []
+        rb=0.025 # radius of ball
+        for i in range(1, 5):
+            after_goal.append(g+np.array([[i*rb*cos],       # points after the goal to be sure to reach it
+                                          [i*rb*sin]]))
+            before_goal.append(g-np.array([[i*rb*cos],      # points before the goal to be sure to be aligned
+                                           [i*rb*sin]]))
+        linePathAfter = np.column_stack(after_goal)
+        linePathBefore = np.column_stack(before_goal)
+        linePathVel = vf*np.ones((1, np.size(linePathAfter,1)))
+        linePathAfter = np.concatenate((linePathAfter, linePathVel), axis=0)
+        linePathBefore = np.concatenate((linePathBefore, linePathVel), axis=0)
+        # add a line between the ball and the finalBallPos to the path
+        path = np.column_stack((path[:,:-1], linePathBefore, path[:,-1], linePathAfter))
     if (status==0):
         path[-1, 0]=vmax 
         path[-1, 1]=vmax    
