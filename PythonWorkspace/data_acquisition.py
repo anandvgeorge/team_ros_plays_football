@@ -29,7 +29,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         """ to measure the trajectory of the robot and ball during shoot
         need to be used with pass_axample.m matlab script"""
         goal = [0.0, 0.0]
-        self.path = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)        
+        self.path, status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)        
         dash = IDash(framerate=0.1)
         dash.add(lambda: plt.plot(-self.path[1,:], self.path[0,:], 'b-*') and
             plt.xlim([-0.7, 0.7]) and plt.ylim([-0.7, 0.7]))

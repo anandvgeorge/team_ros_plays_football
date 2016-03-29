@@ -50,9 +50,19 @@ epsilon = 0.0001
 [t20, d20] = removeBegining(t20,d20, epsilon, 1);
 [t25, d25] = removeBegining(t25,d25, epsilon, 1);
 
+figure 
 plot(t5, d5./5, t8, d8./8, t10,  d10./10, t13,  d13./13, t15, d15./15, t20, d20./20, t25, d25./25, t20, d(t20), 'r', t20, d_dot(t20), 'r', t20, 0.022*ones(1,length(t20)))
 title('normalized distance of ball after shoot for different motor velocities')
 legend('vm=5', 'vm=8', 'vm=10', 'vm=13', 'vm=15', 'vm=20', 'vm=25', 'model distance', 'model velocity')
+xlabel('time [s]')
+ylabel('distance')
+
+figure 
+plot(t5, d5, t8, d8, t10,  d10, t13,  d13, t15, d15, t20, d20, t25, d25, t20, 13.*d(t20), 'r')
+title('distance of ball after shoot for different motor velocities')
+legend('vm=5', 'vm=8', 'vm=10', 'vm=13', 'vm=15', 'vm=20', 'vm=25')
+xlabel('time [s]')
+ylabel('distance')
 
 % % vmotora =25, vrobot measure = 0.375
 % k = 25/0.3751   % 66.65
