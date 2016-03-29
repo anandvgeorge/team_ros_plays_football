@@ -282,7 +282,82 @@ class BaseRobotRunner(object):
             if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
                 pruned_path.append(self.path[:,idx])
         self.path = np.column_stack(pruned_path)
-
+    
+    def robotAvoidance(self, waypoints): # static obstacle avoidance
+        # Blue1, Blue2, Blue3, Red1, Red2, Red3 (order for the objects)
+        # Blue1 is the controlled robot
+        minimalDistance = 0.12 # radius of two robots, so that they don't crash
+        configuration = []
+        obstaclePos = []
+        colors = ['Blue', 'Red']
+        players = 3
+        count = 0
+        distance = []
+        for color in colors:
+            for i in range(players):
+                print color,
+                print i+1
+                robotID = '%s%d' % (color, i+1)
+                _, self.robot=vrep.simxGetObjectHandle(self.clientID, robotID, vrep.simx_opmode_oneshot_wait)
+                _, self.leftMotorTest=vrep.simxGetObjectHandle(self.clientID, '%s_leftJoint' % robotID, vrep.simx_opmode_oneshot_wait)
+                _, self.rightMotorTest=vrep.simxGetObjectHandle(self.clientID, '%s_rightJoint' % robotID, vrep.simx_opmode_oneshot_wait)
+                _, self.botTest=vrep.simxGetObjectHandle(self.clientID, self.bot_name, vrep.simx_opmode_oneshot_wait)
+                _, self.xyzTest = vrep.simxGetObjectPosition(self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+                _, self.eulerAnglesTest = vrep.simxGetObjectOrientation(self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+                configuration.append(self.getRobotConf(self.robot))
+                
+                distance.append(999999)
+                print 'Distance Array Before:'
+                print distance
+                for waypoint in waypoints:
+                    if (color is not 'Blue' and i+1 is not 1):
+                        print
+                        print waypoint
+                        print configuration
+                        print
+                        temp = math.sqrt((waypoint[0]-configuration[count][0])**2+(waypoint[1]-configuration[count][1])**2)
+                        print temp,
+                        print '<',
+                        print distance[count],
+                        print '?'
+                        if temp < distance[count]:
+                            distance[count] = temp
+                        print 'Distance Array After:'
+                        print distance
+                        print
+                print 'Count: ',
+                print count
+                if distance[count] < minimalDistance:
+                    obstaclePos.append(configuration[count])
+                count = count + 1
+        print 'Number of Obstacles'
+        print len(obstaclePos)
+        if len(obstaclePos) is 0:
+            print 'No obstacles'
+            return 0
+        for obstacle in obstaclePos: # FIXME: MULTIPLE OBSTACLES
+            x = obstacle[0] # robot coordinates
+            y = obstacle[1]
+            xp = configuration[0] # obstacle coordiantes
+            yp = configuration[1]
+            ball = BallEngine()
+            xb, yb = ball.getBallPose() # ball coordinates
+            R = minimalDistance
+            d = math.sqrt((xp-x)*(xp-x)+(yp-y)*(yp-y))
+            beta = math.asin(R/d)
+            gamma = math.atan2(yp-y, xp-x)
+            alpha1 = gamma - beta
+            alpha2 = gamma + beta
+            phiStar = math.atan2(yb-y, xb-x) # desired heading towards the ball
+            hyp = math.sqrt(d*d-R*R)
+            if abs(alpha1-phiStar) <= abs(alpha2-phiStar):
+                phi = alpha1
+            else:
+                phi = alpha2
+            xGoal = hyp * math.sin(phi)
+            yGoal = hyp * math.cos(phi)
+            return [xGoal, yGoal,phi]
+        
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
