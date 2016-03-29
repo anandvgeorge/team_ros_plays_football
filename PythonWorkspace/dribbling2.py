@@ -1,7 +1,7 @@
 """
 
-""" 
-import base_robot 
+"""
+import base_robot
 import time
 import math
 import numpy as np #array library
@@ -47,7 +47,9 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
         for i in range(len(waypoint)):
             p0 = self.ballEngine.getBallPose()
-            self.path = passPath(self.getRobotConf(self.bot), p0, waypoint[i],vmax=10,vr=7, kq= 0.0035)
+            curr_bot_pose = list(self.getRobotConf(self.bot))
+            curr_bot_pose[1] -= 0.05
+            self.path, status = passPath(curr_bot_pose, p0, waypoint[i],vmax=10,vr=7, kq= 0.0035)
             
             print self.path
             
@@ -56,7 +58,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 #                plt.xlim([-0.7, 0.7]) and plt.ylim([-0.7, 0.7]))
 #            dash.plotframe()       
             print 'estimated time path'
-            print calculatePathTime(self.path)
+            # print calculatePathTime(self.path)
             t = self.ballEngine.getSimTime()
             t = self.ballEngine.getSimTime()     # time in seconds
             while (self.ballEngine.getSimTime()-t)<10: #End program after 30sec
