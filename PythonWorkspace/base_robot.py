@@ -332,6 +332,21 @@ class BaseRobotRunner(object):
         print obstaclePath.shape
         index, distance = obstacleDetector(obstacleConf, obstaclePath, rb)
         self.path = avoidObstacle(obstaclePath, obstacleConf, index, distance, rb)
+
+    def receiveBall(self, proximitySensors, interceptVel = 17.5):
+        robotPosition = self.getRobotConf()
+        ballPosition = self.BallEngine.getBallPose()
+        pathNew = np.zeros((3,1))
+        pathNew[0,0] = ballPosition[0]
+        pathNew[1,0] = ballPosition[1]
+        pathNew[2,0] = interceptVel
+        self.path = pathNew
+        self.followPath(robotPosition)
+
+        proximity = min(proximitySensors)
+
+        if proximity < 0.001:
+            self.path = None
         
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
