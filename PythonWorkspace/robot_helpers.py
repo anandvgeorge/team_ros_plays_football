@@ -5,11 +5,14 @@ import numpy as np
 # https://docs.scipy.org/doc/numpy-dev/user/numpy-for-matlab-users.html
 import matplotlib.pyplot as plt
 
-def prox_sens_initialize(clientID):
+def prox_sens_initialize(clientID, botName):
     """ Initialize proximity sensor. Maybe helpful later """
     proxSens=[]
-    for i in range(8):
-        _, oneProxSens = vrep.simxGetObjectHandle(clientID, 'ePuck_proxSensor%d' % (i+1), vrep.simx_opmode_streaming)
+    for i in range(4):
+        handleName = '%s_proxSensor%d' % (botName, i+1)
+        _, oneProxSens = vrep.simxGetObjectHandle(clientID, handleName, vrep.simx_opmode_oneshot_wait)
+        # call the prox sensor once to start it
+        _ = vrep.simxReadProximitySensor(clientID, oneProxSens, vrep.simx_opmode_streaming)
         proxSens.append(oneProxSens)
     return proxSens
 
@@ -21,8 +24,8 @@ def prox_sens_read(clientID, proxSens):
     outputs = []
     keys = ('returnCode','detectionState','detectedPoint','detectedObjectHandle','detectedSurfaceNormalVector')
     # NOTE: take norm of deteected point to get the distance
-    for i in range(8):
-        proxOut=vrep.simxReadProximitySensor(clientID, proxSens[i], vrep.simx_opmode_streaming)
+    for i in range(4):
+        proxOut=vrep.simxReadProximitySensor(clientID, proxSens[i], vrep.simx_opmode_buffer)
         outputs.append(dict(zip(keys, proxOut)))
     return outputs
 

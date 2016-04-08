@@ -14,7 +14,8 @@ import threading
 
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
-    interpolatePath, obstacleDetector, avoidObstacle)
+    interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize,
+    prox_sens_read)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -195,7 +196,9 @@ class BaseRobotRunner(object):
         _, self.bot=vrep.simxGetObjectHandle(
             self.clientID, self.bot_name, vrep.simx_opmode_oneshot_wait)
 
-        # proxSens = prox_sens_initialize(self.clientID)
+        # initialize proximity sensors
+        self.proxSensors = prox_sens_initialize(self.clientID, self.bot_name)
+
         # initialize odom of bot
         _, self.xyz = vrep.simxGetObjectPosition(
             self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
@@ -232,6 +235,28 @@ class BaseRobotRunner(object):
         theta = eulerAngles[2]
 
         return (x, y, theta)
+
+    def senseObstacles(self):
+        """
+        Returns
+        -------
+        objectDetected: array-like, shape 4
+            whether an obstacle was detected for the 4 sensors
+
+        objectDistances: array-like, shape 4
+            the distances detected
+        """
+        out = prox_sens_read(self.clientID, self.proxSensors)
+        objectDetected = np.zeros(4)
+        objectDistances = np.zeros(4)
+        for i, sens in enumerate(out):
+            if sens['detectionState'] == 1:
+                objectDetected[i] = 1
+                x, y, z = sens['detectedPoint']
+                a = np.sqrt(x**2 + y**2)
+                distance = np.sqrt(a**2 + z**2)
+                objectDistances[i] = distance
+        return objectDetected, objectDistances
 
     def setMotorVelocities(self, forward_vel, omega):
         ctrl_sig_left, ctrl_sig_right = vomega2bytecodes(forward_vel, omega, g=1)
