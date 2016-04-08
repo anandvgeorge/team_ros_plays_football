@@ -81,7 +81,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         # start ball at zone 4 - 1 (0 indexed)
         ball_start = self.zone_centers[:,3]
         ball_start[1] -= 0.05 # move closer to players center, but further distance q from player
-        self.ballEngine.setBallPose(ball_start)
+        #self.ballEngine.setBallPose(ball_start)
         self.ballEngine.update()
 
         # FIXME: Hardcoded is good for drill, not good for game!
@@ -303,7 +303,10 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
 
                         # fast mode (good luck!)
                         activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=20, vr=15, kq=0.0010, hold=True)
-
+                        obstacleConf = [self.oppBots[i].getRobotConf() for i in range(len(self.oppBots))]
+                        obstacleConf.extend([self.bots[i].getRobotConf() for i in range(len(self.bots)) if i != activebot_idx])
+                        for i in xrange(len(obstacleConf)):
+                            activebot.obstacleAwarePath(obstacleConf[i],0.05)
                         activebot.prunePath()
                         activebot.pause_before_kick = activebot.path.shape[1] > 2
                         p2 = self.ballEngine.getNextRestPos()
@@ -321,8 +324,8 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             plt.plot(-rcvy, rcvx, 'r+')
                             plt.plot(-rcvbot.path[1,:], rcvbot.path[0,:], 'r.')
                             plt.plot(-finalBallPos[1], finalBallPos[0], 'bo')
-                            plt.plot(-rcvp1[1], rcvp1[0], 'mx')
-                            plt.plot(-rcvp2[1], rcvp2[0], 'kx')
+                            #plt.plot(-rcvp1[1], rcvp1[0], 'mx')
+                            #plt.plot(-rcvp2[1], rcvp2[0], 'kx')
                             plt.xlim([-0.75, 0.75]) # y axis in the field
                             plt.ylim([-0.5, 0.5]) # x axis in the field
                             plt.title('Red = RCV, Green = Active')
@@ -369,7 +372,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     self.idash.add(vizShooting)
 
 
-                # self.idash.plotframe() # ~100 ms shaved by removing this line
+                #self.idash.plotframe() # ~100 ms shaved by removing this line
                 # time.sleep(50*1e-3)
 
         self.clean_exit()
@@ -389,5 +392,11 @@ bot3 = ZonePasserCyclic(color='Blue', number=3, clientID=runner.clientID)
 #bot3.add_zone_destination(3)
 #bot3.add_delay(2)
 runner.addRobot(bot3)
+
+oppBot1 = ZonePasserCyclic(color='Red', number=1, clientID=runner.clientID)
+runner.addOppRobot(oppBot1)
+
+oppBot2 = ZonePasserCyclic(color='Red', number=2, clientID=runner.clientID)
+runner.addOppRobot(oppBot2)
 
 runner.run()

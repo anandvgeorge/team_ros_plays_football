@@ -214,20 +214,21 @@ def calculatePathTime(path, kv=66.65):     #kv=66.65=vmot/vrobot
     return t*kv
 
 def interpolatePath(path,robotPosition):
+    path = path[:,1:]
     pathNew = np.zeros((3,1))
     pathNew[0,0] = robotPosition[0]
     pathNew[1,0] = robotPosition[1]
     pathNew[2,0] = path[2,0]
-    dist = math.sqrt((pathNew[0,0]-path[0,0])**2+(pathNew[1,0]-path[1,0]**2))
-    interpolFactor = int(math.ceil(dist*10))
+    dist = math.sqrt((pathNew[0,0]-path[0,0])**2+(pathNew[1,0]-path[1,0])**2)
+    interpolFactor = 3*int(math.ceil(dist*50)) # TODO
     for i in range(1,interpolFactor-1):
         temp = i*(path[0:2,0]-pathNew[0:2,0])/float(interpolFactor) + pathNew[0:2,0]
         pathNew = np.column_stack((pathNew,np.array([temp[0],temp[1],path[2,0]]).reshape((3,1))))
     pathNew = np.column_stack((pathNew,path))
     return pathNew
 
-def obstacleDetecter(obstacleConf, path):
-    rb = 0.025 # TODO
+def obstacleDetector(obstacleConf, path,rb=0.025):
+    #rb = 0.025 # TODO
     #obstacleNo = 0
     #for obstacleConf in obstacleConfs:
     #index = np.zeros(len(obstacleConfs),1)
@@ -237,16 +238,16 @@ def obstacleDetecter(obstacleConf, path):
     for i in range(len(path[0,:])):
         dis = math.sqrt((obstacleConf[0]-path[0,i])**2 + (obstacleConf[1]-path[1,i])**2)
         print dis
-        if dis <= 6*rb: # TODO
+        if dis <= 2*rb: # TODO
             print "WARNING: Obstacle detected"
             index.append(i)
             distance.append(dis)
         #obstacleNo += 1
     return (index, distance)
 
-def avoidObstacle(path,obstacleConf,index,distance):
-    rb = 0.025 #TODO
-    minimalDistance = 6*rb #TODO
+def avoidObstacle(path,obstacleConf,index,distance,rb=0.025):
+    #rb = 0.025 #TODO
+    minimalDistance = 2*rb #TODO
     for i in range(len(index)):
         delta = 0
         if (path[0,index[i]] == obstacleConf[0]) and (path[1,index[i]] == obstacleConf[1]):
@@ -263,16 +264,17 @@ def avoidObstacle(path,obstacleConf,index,distance):
     return path
 
 def test_avoidObstacle():
-    vector = np.zeros((3,1))
+    vector = np.zeros((3,2))
+    vector[:,1] = [-0.5,0.5,0]
     robotPosition = (1,1)
     path = interpolatePath(vector,robotPosition)
     pathOld = path.copy()
     print path
-    obstacleConf = (0.6,0.7)
-    index, distance = obstacleDetecter(obstacleConf,path)
+    obstacleConf = (0.45,0.4)
+    index, distance = obstacleDetector(obstacleConf,path)
     pathNew =  avoidObstacle(path,obstacleConf,index,distance)
     phi = np.linspace(0, 2*np.pi, 18, endpoint=True)
-    x,y = 6*0.025*np.cos(phi)+obstacleConf[0], 6*0.025*np.sin(phi)+obstacleConf[1]
+    x,y = 2*0.025*np.cos(phi)+obstacleConf[0], 2*0.025*np.sin(phi)+obstacleConf[1]
 
     actx, acty = vector[:2]
     ballx, bally = robotPosition[:2]
@@ -280,16 +282,16 @@ def test_avoidObstacle():
     plt.hold('on')
     plt.plot(x,y,'y.')
     plt.plot(pathOld[0,:], pathOld[1,:], 'g.')
-    plt.plot(path[0,:], path[1,:], 'b*')
+    plt.plot(pathNew[0,:], pathNew[1,:], 'b*')
     plt.plot(obstacleConf[0],obstacleConf[1])
     plt.plot(bally, ballx, 'b.')
     plt.plot(acty, actx, 'g+')
-    plt.xlim([-0., 1]) # y axis in the field
-    plt.ylim([-0., 1]) # x axis in the field
+    plt.xlim([-1, 1]) # y axis in the field
+    plt.ylim([-1, 1]) # x axis in the field
     plt.show()
     time.sleep(10)
 
-test_avoidObstacle()
+#test_avoidObstacle()
 
 class ThetaRange(object):
     """ Class to organize methods related to shifts and transformations of Theta or Angles """

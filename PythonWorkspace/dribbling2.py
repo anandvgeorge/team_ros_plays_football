@@ -12,9 +12,7 @@ from idash import IDash
 from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime
 from plot_helpers import plotVector
 
-#waypoint = [(0.2, 0.4), (0, 0.4), (-0.2, 0.4),(-0.2, 0.2), (-0.2, 0),(0, 0), (0.2, 0),(0.2, -0.2), (0.2, -0.4),(0, -0.4), (-0.2, -0.4)]
-waypoint = [(0, 0.4), (-0.2, 0.4),(-0.2, 0.2), (-0.2, 0),(0, 0), (0.2, 0),(0.2, -0.2), (0.2, -0.4),
-                (0, -0.4),(-0.05, -0.4), (-0.1, -0.4), (-0.15, -0.4), (-0.2, -0.4), (-0.2, -0.4)]
+
 
 class MyRobotRunner(base_robot.BaseRobotRunner):
 
@@ -23,6 +21,9 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         self.idash = IDash(0.005)
 
     def robotCode(self):
+        #waypoint = [(0.2, 0.4), (0, 0.4), (-0.2, 0.4),(-0.2, 0.2), (-0.2, 0),(0, 0), (0.2, 0),(0.2, -0.2), (0.2, -0.4),(0, -0.4), (-0.2, -0.4)]
+        waypoint = [(0, 0.4), (-0.2, 0.4),(-0.2, 0.2), (-0.2, 0),(0, 0), (0.2, 0),(0.2, -0.2), (0.2, -0.4),
+                        (0, -0.4),(-0.05, -0.4), (-0.1, -0.4), (-0.15, -0.4), (-0.2, -0.4), (-0.2, -0.4)]
         # waypoint = []
         # r = 0.2
         # increments = 5
@@ -86,7 +87,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
                 p3 = self.ballEngine.getNextRestPos()
                 dist_from_start = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
                 velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
-                self.idash.plotframe()
+                #self.idash.plotframe()
                 if dist_from_start > 0.01: # the ball has been touched
                     if velocity_measure < 0.003:
                         break# wait til velocity reaches zero
