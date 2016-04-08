@@ -14,7 +14,7 @@ import threading
 
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
-    interpolatePath, obstacleDetector, avoidObstacle)
+    interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -195,7 +195,9 @@ class BaseRobotRunner(object):
         _, self.bot=vrep.simxGetObjectHandle(
             self.clientID, self.bot_name, vrep.simx_opmode_oneshot_wait)
 
-        # proxSens = prox_sens_initialize(self.clientID)
+        # initialize proximity sensors
+        self.proxSensors = prox_sens_initialize(self.clientID, self.bot_name)
+
         # initialize odom of bot
         _, self.xyz = vrep.simxGetObjectPosition(
             self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
