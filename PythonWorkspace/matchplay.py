@@ -9,20 +9,15 @@ from scipy.spatial.distance import cdist
 import time
 import matplotlib.pyplot as plt
 from idash import IDash
-from robot_helpers import smoothPath, passPath, ThetaRange, prox_sens_read
+from robot_helpers import smoothPath, passPath, ThetaRange
 
 class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         super(Player, self).__init__(*args, **kwargs)
 
     def robotCode(self):
-        out = prox_sens_read(self.clientID, self.proxSensors)
-        objectDetected = np.zeros(4)
-        for i, sens in enumerate(out):
-            # print sens['detectionState']
-            if sens['detectionState'] == 1:
-                objectDetected[i] = 1
-        return objectDetected
+        objectDetected, objectDistances = self.senseObstacles()
+        return objectDetected, objectDistances
 
 class Master(base_robot.MultiRobotCyclicExecutor):
     def __init__(self, *args, **kwargs):
@@ -40,6 +35,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             while True:
                 for bot in self.bots:
                     print bot.robotCode()
+                time.sleep(1)
 
 if __name__ == '__main__':
     master = Master(ip='127.0.0.1')
