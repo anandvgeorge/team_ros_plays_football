@@ -248,7 +248,7 @@ class BaseRobotRunner(object):
         """
         out = prox_sens_read(self.clientID, self.proxSensors)
         objectDetected = np.zeros(4)
-        objectDistances = np.zeros(4)
+        objectDistances = 100*np.ones(4)
         for i, sens in enumerate(out):
             if sens['detectionState'] == 1:
                 objectDetected[i] = 1
