@@ -440,9 +440,10 @@ class MultiRobotRunner(object):
     https://pymotw.com/2/threading/
     """
 
-    def __init__(self, ip='127.0.0.1'):
+    def __init__(self, ip='127.0.0.1', port=19999):
         # start vrep to obtain a self.clientID
         self.ip = ip
+        self.port = port
         self.initializeVrepClient()
         self.bots = []
         self.oppBots = []
@@ -455,7 +456,7 @@ class MultiRobotRunner(object):
         num_tries = 10
         while count < num_tries:
             vrep.simxFinish(-1) # just in case, close all opened connections
-            self.clientID=vrep.simxStart(self.ip,19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            self.clientID=vrep.simxStart(self.ip,self.port,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
             if self.clientID!=-1:
                 print 'Connected to V-REP'
                 break
