@@ -70,7 +70,7 @@ class Attacker(base_robot.BaseRobotRunner):
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
-            avoid any obstacles
+            # avoid any obstacles
             if obstacleConfs:
                 for conf in obstacleConfs:
                     self.obstacleAwarePath(conf, 0.07)
