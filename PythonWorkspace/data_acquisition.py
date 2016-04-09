@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt #used for image plotting
 import signal
 
 from idash import IDash
-from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime
+from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime, v2PosB
 from plot_helpers import plotVector
 
 
@@ -31,8 +31,10 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         while cc:
             t=time.time()
             self.keepGoal2(self.getRobotConf())
+#            self.driveMotor(0, 0)
             print 'loop time'
             print t-time.time()
+            time.sleep(0.01)
             
         """ to measure the trajectory of the robot and ball during shoot
         need to be used with pass_axample.m matlab script"""
