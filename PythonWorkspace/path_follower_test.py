@@ -32,7 +32,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         #k=0.0345    # ball model: d(t) = vmot*k*(1-exp(-t/T))
 
         goal = (0.0, 0.0)
-        self.path, status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)
+        self.path, status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal, kick=True)
         print self.path
         
         dash = IDash(framerate=0.1)

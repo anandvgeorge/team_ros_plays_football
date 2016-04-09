@@ -13,12 +13,34 @@ from robot_helpers import smoothPath, passPath, ThetaRange
 
 class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
+        """init for each robot"""
         super(Player, self).__init__(*args, **kwargs)
 
     def robotCode(self):
+        """inner while loop for each robots"""
         objectDetected, objectDistances = self.senseObstacles()
         return objectDetected, objectDistances
 
+class Attacker(base_robot.BaseRobotRunner):
+    def __init__(self, *args, **kwargs):
+        """init for Attacker robot"""
+        super(Attacker, self).__init__(*args, **kwargs)
+        goal = (-1.5+3*np.random.rand(), 7.5)
+        self.path, self.status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal, kick=True)
+
+    def robotCode(self):
+        """inner while loop for Attacker robot"""         
+        self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05) 
+
+class Goalie(base_robot.BaseRobotRunner):
+    def __init__(self, *args, **kwargs):
+        """init for Goalie robot"""
+        super(Goalie, self).__init__(*args, **kwargs)
+   
+    def robotCode(self):
+        """inner while loop for Goalie robot"""         
+        self.keepGoal(self.getRobotConf(self.bot), 0.65)
+        
 class Master(base_robot.MultiRobotCyclicExecutor):
     def __init__(self, *args, **kwargs):
         super(Master, self).__init__(*args, **kwargs)
@@ -31,14 +53,16 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             # get to the 3 starting positions
             # while game is still going...
             # do things in a while loop
-
+            
             while True:
-                for bot in self.bots:
-                    print bot.robotCode()
-                time.sleep(1)
+                self.bots[0].robotCode()
+                self.bots[1].robotCode()
+#                time.sleep(1)
 
 if __name__ == '__main__':
     master = Master(ip='127.0.0.1')
-    bot2 = Player(color='Blue', number=2, clientID=master.clientID)
-    master.addRobot(bot2)
+    kicker = Attacker(color='Red', number=2, clientID=master.clientID)
+    goolie = Goalie(color='Blue', number=2, clientID=master.clientID)
+    master.addRobot(kicker)    
+    master.addRobot(goolie)
     master.run()

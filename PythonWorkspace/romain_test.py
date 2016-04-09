@@ -9,6 +9,7 @@ import math
 import numpy as np #array library
 import matplotlib.pyplot as plt #used for image plotting
 import signal
+import msvcrt
 
 from idash import IDash
 from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime, v2orientation
@@ -28,17 +29,19 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         
         #k=0.0345    # ball model: d(t) = vmot*k*(1-exp(-t/T))
 
-        finalConf = (0.0, 0.0, 0.0)
+#        finalConf = (0.0, 0.0, 0.0)
 #        while (self.ballEngine.getSimTime()-t)<10: #End program after 30sec
+        
         cc=1
         while cc:
-            robotConf = self.getRobotConf(self.bot)            
-            v=v2orientation(robotConf, finalConf)
-            self.setMotorVelocities(v[0], v[1])
-#            if (v[0]<0.001 and v[1]<0.001):
-#                cc=0
-            print 'robotConf'
-            print robotConf
+            self.keepGoal(self.getRobotConf(self.bot), 0.65)
+            y = raw_input()
+            x = msvcrt.kbhit()
+            print y
+            if x: 
+                ret = ord(msvcrt.getch())  
+                print 'ret'
+                print ret
         
         self.setMotorVelocities(0,0)
 

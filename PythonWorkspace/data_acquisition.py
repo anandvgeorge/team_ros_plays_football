@@ -60,12 +60,12 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
             
         self.setMotorVelocities(0,0)        
 
-#        print 'robotPos='
-#        print pr
-#        print 'ballPos='  
-#        print pb
-#        print 'goalEstim='
-#        print peg
+        print 'robotPos='
+        print pr
+        print 'ballPos='  
+        print pb
+        print 'goalEstim='
+        print peg
         
         """ to measure distance of the ball after shoot
             need to be used with ballModel.m matlab script"""

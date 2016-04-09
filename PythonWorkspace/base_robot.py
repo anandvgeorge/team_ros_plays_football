@@ -15,7 +15,7 @@ import threading
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
     interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize,
-    prox_sens_read)
+    prox_sens_read, v2PosB)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -302,16 +302,19 @@ class BaseRobotRunner(object):
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
             
-    def keepGoal(self,robotConf, y=0.7, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
+    def keepGoal(self,robotConf, y=0.7,vmax=30, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
         tol=0.0001        
         self.ballEngine.update()  
         pm = self.ballEngine.posm2              # previous position
         p = self.ballEngine.getBallPose()       # position
         if math.fabs(p[1]-pm[1])<tol:       
             finalPos=[0,y]
-            vRobot = v2Pos(robotConf, finalPos)
+            vRobot = v2PosB(robotConf, finalPos)
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
+        if y*(p[1]-pm[1])<0:
+            self.setMotorVelocities(0, 0)
+            return 0
         a = (y-pm[1])/(p[1]-pm[1])  # intersection: (x,y)^t = pm+a(p-pm) 
         x = pm[0]+a*(p[0]-pm[0])  
         if (x>goalLim):
@@ -319,13 +322,13 @@ class BaseRobotRunner(object):
         if (x<-goalLim):
             x = -goalLim
         finalPos=[x,y]
-        print 'pm'
-        print pm
-        print 'p'
-        print p
-        print 'goalPos'
-        print finalPos
-        vRobot = v2Pos(robotConf, finalPos)
+#        print 'pm'
+#        print pm
+#        print 'p'
+#        print p
+#        print 'goalPos'
+#        print finalPos
+        vRobot = v2PosB(robotConf, finalPos, vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])
         return 0
         
