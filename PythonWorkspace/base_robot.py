@@ -132,7 +132,7 @@ class BallEngine:
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, color, number, clientID=None, ip='127.0.0.1'): # ip='127.0.0.1', '172.29.34.63'
+    def __init__(self, color, number, clientID=None, ip='127.0.0.1', port=19998): # ip='127.0.0.1', '172.29.34.63'
         """
         color: i.e. 'Blue'
         number: i.e. 1
@@ -141,6 +141,7 @@ class BaseRobotRunner(object):
         """
         # parameter init
         self.ip = ip
+        self.port=port
         self.color = color
         self.bot_name = '%s%d' % (color, number)
         self.bot_nameStriker = 'Red1'
@@ -179,7 +180,7 @@ class BaseRobotRunner(object):
         num_tries = 10
         while count < num_tries:
             vrep.simxFinish(-1) # just in case, close all opened connections
-            self.clientID=vrep.simxStart(self.ip,19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            self.clientID=vrep.simxStart(self.ip,self.port,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
             if self.clientID!=-1:
                 print 'Connected to V-REP'
                 break
@@ -372,6 +373,9 @@ class BaseRobotRunner(object):
                 pruned_path.append(self.path[:,idx])
         if (len(pruned_path)):
             self.path = np.column_stack(pruned_path)
+        else:
+            rc=self.getRobotConf()
+            self.path = np.array([[rc[0]],[rc[1]],[20]])
 
     def obstacleAwarePath(self, obstacleConf, rb = 0.025):
         robotPosition = self.getRobotConf()

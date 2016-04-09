@@ -100,5 +100,5 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
 
 if __name__ == '__main__':
-    obj = MyRobotRunner('Blue', 1) # ip='172.29.34.63'
+    obj = MyRobotRunner('Blue', 1, ip='192.168.0.100', port=19998) # ip='172.29.34.63'
     obj.run()

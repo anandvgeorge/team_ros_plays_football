@@ -83,15 +83,18 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 #                time.sleep(1)
 
 if __name__ == '__main__':
-    master = Master(ip='192.168.0.100') # 127.0.0.1
-    master.addRobot(Goalie(goal_pos=-0.72, color='Red', number=1, clientID=master.clientID))
-#    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=2, clientID=master.clientID))
-    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=3, clientID=master.clientID))
-    master.addRobot(Dumb(v=25, color='Red', number=2, clientID=master.clientID))
+#    master = Master(ip='192.168.0.100', port=19999) # 127.0.0.1
+    master = Master(ip='127.0.0.1')
+#    master.addRobot(Goalie(goal_pos=-0.72, color='Red', number=1, clientID=master.clientID))
+##    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=2, clientID=master.clientID))
+#    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=3, clientID=master.clientID))
+#    master.addRobot(Dumb(v=25, color='Red', number=2, clientID=master.clientID))
 #    master.addRobot(Dumb(v=26, color='Red', number=3, clientID=master.clientID))
 #    master.addRobot(Goalie(goal_pos= 0.72, color='Blue', number=1, clientID=master.clientID))
 ##    master.addRobot(Dumb(v=24, color='Blue', number=2, clientID=master.clientID))
 ##    master.addRobot(Dumb(v=31, color='Blue', number=3, clientID=master.clientID))
 #    master.addRobot(Attacker(goal_pos=-0.72, color='Blue', number=2, clientID=master.clientID))
 #    master.addRobot(Attacker(goal_pos=-0.72, color='Blue', number=3, clientID=master.clientID))
+    master.addRobot(Goalie(goal_pos= 0.72, color='Blue', number=1, clientID=master.clientID))
+    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=1, clientID=master.clientID))      
     master.run()
