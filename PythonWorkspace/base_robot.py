@@ -44,19 +44,19 @@ class BallEngine:
         self.pos = self.getBallPose()
         self.t =  time.time()
         self.T = 2.15   # time constant in [s]
-        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming)
+        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming )
 
     def getBallPose(self):
         _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.handle, -1, vrep.simx_opmode_buffer)
+            self.clientID, self.handle, -1, vrep.simx_opmode_buffer )
         x, y, z = xyz
         return [x, y]
 
-    def setBallPose(self, positionxy):
-        position = np.concatenate((np.asarray(positionxy), np.array([z])))
-        _ = vrep.simxSetObjectPosition(
-            self.clientID, self.handle, -1, position, vrep.simx_opmode_oneshot
-        )
+#    def setBallPose(self, positionxy):
+#        position = np.concatenate((np.asarray(positionxy), np.array([z])))
+#        _ = vrep.simxSetObjectPosition(
+#            self.clientID, self.handle, -1, position, vrep.simx_opmode_oneshot
+#        )
 
     def update(self):
         self.posm2 = self.posm1
@@ -68,22 +68,12 @@ class BallEngine:
 
     def getDeltaPos(self):
         """ returns the change in position, as a XY vector """
-        return np.array(self.posm2) - np.array(self.posm1)
+        return np.array(self.pos) - np.array(self.posm1)
 
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
             model: d(t) = d0 + k0*(1-exp(-(t-t0)/T)), T = 2.15 [s]
         """
-#        print 'posm2'
-#        print self.posm2
-#        print 'posm1'
-#        print self.posm1
-#        print 'pos'
-#        print self.pos
-#        print 'tm2'
-#        print self.tm2
-#        print 't'
-#        print self.t
         tol = 0.0001
         norm = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
         if self.t-self.tm2<tol or math.fabs(norm/(self.t-self.tm2))<tol:
@@ -134,7 +124,6 @@ class BallEngine:
     def getSimTime(self):
         """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
-#        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
         t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
         return t
 
@@ -216,9 +205,9 @@ class BaseRobotRunner(object):
 
         # initialize odom of bot
         _, self.xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.bot, -1, vrep.simx_opmode_streaming )
         _, self.eulerAngles = vrep.simxGetObjectOrientation(
-            self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.bot, -1, vrep.simx_opmode_streaming )
 
         # FIXME: striker handles shouldn't be part of the default base class
         # FIXME: should be better way to have information regarding all the bots (Central Control?) (Publishers/Subscribers...)?
@@ -230,9 +219,9 @@ class BaseRobotRunner(object):
         _, self.botStriker = vrep.simxGetObjectHandle(
             self.clientID, self.bot_nameStriker, vrep.simx_opmode_oneshot_wait)
         _, xyzStriker = vrep.simxGetObjectPosition(
-            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming )
         _, eulerAnglesStriker = vrep.simxGetObjectOrientation(
-            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming )
 
     @abc.abstractmethod
     def robotCode(self):
@@ -243,9 +232,9 @@ class BaseRobotRunner(object):
         if robot_handle is None:
             robot_handle = self.bot
         _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer )
         _, eulerAngles = vrep.simxGetObjectOrientation(
-            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer )
         x, y, z = xyz
         theta = eulerAngles[2]
 
@@ -279,9 +268,9 @@ class BaseRobotRunner(object):
 
     def driveMotor(self, vl, vr):
         _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.leftMotor,vl,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
+            self.clientID,self.leftMotor,vl,vrep.simx_opmode_streaming ) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.rightMotor,vr,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+            self.clientID,self.rightMotor,vr,vrep.simx_opmode_streaming ) # set right wheel velocity
         
     def repulsion_vectors_compute(self, lidarValues, k_repulse=10.0):
         numLidarValues = len(lidarValues)
@@ -343,10 +332,10 @@ class BaseRobotRunner(object):
         self.setMotorVelocities(vRobot[0], vRobot[1])
         return 0
 
-    def keepGoal2(self, robotConf, vmax=30, Ex=0.18, Ey=0.07, Gy=0.72): # 0.72 for left goal, -0.72 for right goal
+    def keepGoal2(self, robotConf, Gy=0.72, vmax=30, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
         """ the robot keep the goal by staying on an ellipse and focusing on ball position 
             configuration of the robot, princial axis of the ellipse, center of the goal """
-        self.ballEngine.update()  
+#        self.ballEngine.update()  
         bp = self.ballEngine.getBallPose()  # ball position
         a=math.atan2(bp[0],Gy-bp[1])
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
@@ -421,7 +410,7 @@ class BaseRobotRunner(object):
         if self.clientID!=-1:
             if not self.multirobots:
                 # Start simulation if MultiRobotRunner not already starting it
-                _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+                _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
             self.robotCode()
 
         if not self.multirobots:
@@ -490,7 +479,7 @@ class MultiRobotRunner(object):
 
     def run(self):
         if self.clientID!=-1:
-            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
             # Create threads for each
             self.threads = []
             for bot in self.bots:
@@ -526,7 +515,7 @@ class MultiRobotCyclicExecutor(MultiRobotRunner):
         as a template.
         """
         if self.clientID!=-1:
-            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
             t0 = time.time()
             while True:
                 for bot in self.bots:

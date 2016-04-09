@@ -38,14 +38,14 @@ class Attacker(base_robot.BaseRobotRunner):
             
 
 class Goalie(base_robot.BaseRobotRunner):
-    def __init__(self, goal_pos=0.65, *args, **kwargs):
+    def __init__(self, goal_pos=0.72, *args, **kwargs):
         """init for Goalie robot"""
         super(Goalie, self).__init__(*args, **kwargs)
         self.goal=goal_pos
 
     def robotCode(self):
         """inner while loop for Goalie robot"""
-        self.keepGoal(self.getRobotConf(self.bot), self.goal)
+        self.keepGoal2(self.getRobotConf(self.bot), self.goal)
         
 class Dumb(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
@@ -83,10 +83,10 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
 if __name__ == '__main__':
     master = Master(ip='127.0.0.1')
-    master.addRobot(Goalie(goal_pos=-0.63, color='Red', number=1, clientID=master.clientID))
+    master.addRobot(Goalie(goal_pos=-0.72, color='Red', number=1, clientID=master.clientID))
     master.addRobot(Dumb(color='Red', number=2, clientID=master.clientID))
-#    master.addRobot(Dumb(color='Red', number=3, clientID=master.clientID))
-    master.addRobot(Goalie(goal_pos= 0.63, color='Blue', number=1, clientID=master.clientID))
+    master.addRobot(Dumb(color='Red', number=3, clientID=master.clientID))
+    master.addRobot(Goalie(goal_pos= 0.72, color='Blue', number=1, clientID=master.clientID))
     master.addRobot(Dumb(color='Blue', number=2, clientID=master.clientID))
-#    master.addRobot(Dumb(color='Blue', number=3, clientID=master.clientID))
+    master.addRobot(Dumb(color='Blue', number=3, clientID=master.clientID))
     master.run()
