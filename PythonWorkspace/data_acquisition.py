@@ -24,6 +24,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
     def robotCode(self):
         
+        
         np.set_printoptions(linewidth=np.inf)                       
 
         """ to measure the trajectory of the robot and ball during shoot
@@ -53,16 +54,18 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
             pb = np.concatenate((pb, np.array([[ballpos[0]],[ballpos[1]]])), axis=1)
             self.ballEngine.update()
             ballpos = self.ballEngine.getNextRestPos()
+            print 'ball valocity'
+            print self.ballEngine.getVeloctiy()
             peg = np.concatenate((peg, np.array([[ballpos[0]],[ballpos[1]]])), axis=1)
             
         self.setMotorVelocities(0,0)        
 
-        print 'robotPos='
-        print pr
-        print 'ballPos='  
-        print pb
-        print 'goalEstim='
-        print peg
+#        print 'robotPos='
+#        print pr
+#        print 'ballPos='  
+#        print pb
+#        print 'goalEstim='
+#        print peg
         
         """ to measure distance of the ball after shoot
             need to be used with ballModel.m matlab script"""

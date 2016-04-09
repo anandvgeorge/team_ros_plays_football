@@ -30,7 +30,7 @@ class FinalProjectProgram():
         # run startup methods
         self.initializeVrepClient()
         self.initializeVrepApi()
-        self.killer = GracefulKiller()
+        # self.killer = GracefulKiller()
         self.idash = IDash(framerate=0.05)
 
     def initializeVrepClient(self):

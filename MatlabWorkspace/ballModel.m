@@ -5,7 +5,7 @@
 clc; clear all; close all;
 
 % test made using v2Pos
-% model: d(t) = k*(1-exp(-at))
+% model: d(t) = k*(1-exp(-t/T))
 k=0.0345, T=2.15
 
 d=@(t) k.*(1.-exp(-t./T))   % times v: the speed of the robot when shooting
@@ -78,3 +78,11 @@ ylabel('distance')
 % figure
 % ti = linspace(0, 20, 200);
 % plot(ti, di(ti, 0, 0, 1),ti, di(ti, 0, 3, 1),ti, di(ti, 0, -3, 1))
+
+figure
+t=0:0.1:10;
+plot(t, 12.*d(t), 'r','linewidth', 3)
+hold on 
+plot(t, 12.*d(t+100), 'k')
+xlabel('time [s]')
+ylabel('distance')

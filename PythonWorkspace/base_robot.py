@@ -116,7 +116,17 @@ class BallEngine:
 #            t0 = self.T*math.log(cte)
         t0 = 0
         return k0, t0
-
+        
+    def getVeloctiy(self):
+        # return the velocity vector of the current ball position
+        dt=self.t-self.tm1
+        if (dt>0.00001): 
+            return ((self.pos[0]-self.posm1[0])/dt,(self.pos[1]-self.posm1[1])/dt)
+        dt=self.t-self.tm2
+        if (dt>0.00001):
+            return ((self.pos[0]-self.posm2[0])/dt,(self.pos[1]-self.posm2[1])/dt)
+        return (0,0)
+            
     def getSimTime(self):
         """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
