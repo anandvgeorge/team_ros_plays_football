@@ -152,6 +152,7 @@ class BaseRobotRunner(object):
         """
         # parameter init
         self.ip = ip
+        self.color = color
         self.bot_name = '%s%d' % (color, number)
         self.bot_nameStriker = 'Red1'
 
