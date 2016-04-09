@@ -247,10 +247,10 @@ def obstacleDetector(obstacleConf, path,rb=0.025):
     #index = np.zeros(len(obstacleConfs),1)
     index = []
     distance = []
-    print len(path[0,:])
+    # print len(path[0,:])
     for i in range(len(path[0,:])):
         dis = math.sqrt((obstacleConf[0]-path[0,i])**2 + (obstacleConf[1]-path[1,i])**2)
-        print dis
+        # print dis
         if dis <= 2*rb: # TODO
             print "WARNING: Obstacle detected"
             index.append(i)
@@ -305,6 +305,17 @@ def test_avoidObstacle():
     time.sleep(10)
 
 #test_avoidObstacle()
+
+def force_repulsion(k_repulse, rho, rho_0):
+    """
+    k_repulse: positive scaling factor
+    rho: distance from point to obstacle
+    rho_0: distance of influence
+    """
+    if rho <= rho_0:
+        return k_repulse*(1.0/rho - 1.0/rho_0)*(1.0/rho**2)
+    else:
+        return 0
 
 class ThetaRange(object):
     """ Class to organize methods related to shifts and transformations of Theta or Angles """

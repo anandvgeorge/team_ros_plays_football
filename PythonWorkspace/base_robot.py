@@ -15,7 +15,7 @@ import threading
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
     interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize,
-    prox_sens_read, v2PosB)
+    prox_sens_read, force_repulsion, v2PosB)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -65,6 +65,10 @@ class BallEngine:
         self.tm1 = self.t
         self.pos = self.getBallPose()
         self.t = time.time() # self.getSimTime()
+
+    def getDeltaPos(self):
+        """ returns the change in position, as a XY vector """
+        return np.array(self.posm2) - np.array(self.posm1)
 
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
@@ -117,7 +121,7 @@ class BallEngine:
         t0 = 0
         return k0, t0
         
-    def getVeloctiy(self):
+    def getVelocity(self):
         # return the velocity vector of the current ball position
         dt=self.t-self.tm1
         if (dt>0.00001): 
@@ -275,6 +279,14 @@ class BaseRobotRunner(object):
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
 
+    def repulsion_vectors_compute(self, lidarValues, k_repulse=10.0):
+        numLidarValues = len(lidarValues)
+        lidarAngles = [np.pi / numLidarValues * index for index in range(numLidarValues)]
+
+        repulsionVectors = [np.array(pol2cart(force_repulsion(k_repulse, np.sqrt(val), 2), angle)) for val, angle in zip(lidarValues, lidarAngles)]
+
+        return repulsionVectors
+
     def followPath(self, robotConf, status=0, rb=0.05, dtheta=0.001, k=3.5):
         """ radius of the buffer zone
         """
@@ -365,9 +377,7 @@ class BaseRobotRunner(object):
 
     def obstacleAwarePath(self, obstacleConf, rb = 0.025):
         robotPosition = self.getRobotConf()
-        print self.path.shape
         obstaclePath = interpolatePath(self.path, robotPosition)
-        print obstaclePath.shape
         index, distance = obstacleDetector(obstacleConf, obstaclePath, rb)
         self.path = avoidObstacle(obstaclePath, obstacleConf, index, distance, rb)
         
