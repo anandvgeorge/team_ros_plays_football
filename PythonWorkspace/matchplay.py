@@ -152,6 +152,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 assert activezone != 2 # now only have active 0,1
                 activebot = self.bots[activezone]
                 activebot.robotCode(self.ballEngine)
+                goalie.robotCode()
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
@@ -190,36 +191,22 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 self.idash.plotframe()
 
 if __name__ == '__main__':
-    bluemaster = Master(ip='127.0.0.1')
+    import sys
+    # cmd: python matchplay.py Blue
+    # argv: ['matchplay.py', 'Blue']
+    if len(sys.argv) < 2:
+        color = 'Blue' # default
+    else:
+        color = sys.argv[1]
+    if color == 'Blue':
+        port=19998
+    else:
+        port=19999
+
+    bluemaster = Master(ip='127.0.0.1', port=port)
     # Order of which we addRobots kinda important...
     # self.bots -> Attacker, Midfielder, Goalie
-    bluemaster.addRobot(Attacker(color='Blue', number=1, clientID=bluemaster.clientID))
-    bluemaster.addRobot(MidFielder(color='Blue', number=2, clientID=bluemaster.clientID))
-    bluemaster.addRobot(Goalie(color='Blue', number=3, clientID=bluemaster.clientID))
-
-    # --smart red
-    # redmaster = Master(ip='127.0.0.1')
-    # redmaster.addRobot(Attacker(color='Red', number=1, clientID=redmaster.clientID))
-    # redmaster.addRobot(MidFielder(color='Red', number=2, clientID=redmaster.clientID))
-    # redmaster.addRobot(Goalie(color='Red', number=3, clientID=redmaster.clientID))
-
-    # --dumb red
-    # redmaster = DumbMaster(ip='127.0.0.1')
-    # redmaster.addRobot(Dumb(color='Red', number=1, clientID=redmaster.clientID))
-    # redmaster.addRobot(Dumb(color='Red', number=2, clientID=redmaster.clientID))
-    # redmaster.addRobot(Goalie(color='Red', number=3, clientID=redmaster.clientID))
-
-    # import threading
-    # thread1 = threading.Thread(target=bluemaster.run)
-    # thread1.setDaemon(True) # require it to join
-    # thread1.start()
-
-    # thread2 = threading.Thread(target=redmaster.run)
-    # thread2.setDaemon(True) # require it to join
-    # thread2.start()
-
-    # # thread join before ending
-    # thread1.join()
-    # thread2.join()
+    bluemaster.addRobot(Attacker(color=color, number=1, clientID=bluemaster.clientID))
+    bluemaster.addRobot(MidFielder(color=color, number=2, clientID=bluemaster.clientID))
+    bluemaster.addRobot(Goalie(color=color, number=3, clientID=bluemaster.clientID))
     bluemaster.run()
-    # redmaster.run()
