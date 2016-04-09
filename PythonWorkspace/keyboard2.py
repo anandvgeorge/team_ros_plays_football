@@ -25,4 +25,8 @@ print( "Press a key (Escape key to exit):" )
 root.bind_all('<Key>', key)
 # don't show the tk window
 # root.withdraw() # DONT USE THIS DOES NOT WORK
-root.mainloop()
+# root.mainloop() # blocking
+
+while 1:
+    root.update()
+    # place any code here, update does not block!
