@@ -274,11 +274,14 @@ class BaseRobotRunner(object):
 
     def setMotorVelocities(self, forward_vel, omega):
         ctrl_sig_left, ctrl_sig_right = vomega2bytecodes(forward_vel, omega, g=1)
-        _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.leftMotor,ctrl_sig_left,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
-        _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+        self.driveMotor(ctrl_sig_left, ctrl_sig_right)
 
+    def driveMotor(self, vl, vr):
+        _ = vrep.simxSetJointTargetVelocity(
+            self.clientID,self.leftMotor,vl,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
+        _ = vrep.simxSetJointTargetVelocity(
+            self.clientID,self.rightMotor,vr,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+        
     def repulsion_vectors_compute(self, lidarValues, k_repulse=10.0):
         numLidarValues = len(lidarValues)
         lidarAngles = [np.pi / numLidarValues * index for index in range(numLidarValues)]
@@ -315,6 +318,7 @@ class BaseRobotRunner(object):
             return 1
             
     def keepGoal(self,robotConf, y=0.7,vmax=30, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
+        """ the robot keep the goal by staying on a line and focusing on ball displacement """
         tol=0.0001        
         self.ballEngine.update()  
         pm = self.ballEngine.posm2              # previous position
@@ -334,17 +338,20 @@ class BaseRobotRunner(object):
         if (x<-goalLim):
             x = -goalLim
         finalPos=[x,y]
-#        print 'pm'
-#        print pm
-#        print 'p'
-#        print p
-#        print 'goalPos'
-#        print finalPos
         vRobot = v2PosB(robotConf, finalPos, vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])
         return 0
-        
 
+    def keepGoal2(self, robotConf, vmax=30, Ex=0.18, Ey=0.07, Gy=0.72): # 0.72 for left goal, -0.72 for right goal
+        """ the robot keep the goal by staying on an ellipse and focusing on ball position 
+            configuration of the robot, princial axis of the ellipse, center of the goal """
+        self.ballEngine.update()  
+        bp = self.ballEngine.getBallPose()  # ball position
+        a=math.atan2(bp[0],Gy-bp[1])
+        rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
+        vRobot = v2PosB(robotConf, rp, vmax)
+        self.setMotorVelocities(vRobot[0], vRobot[1])        
+        
     def add_to_path(self, path_objective):
         """ path objective is array-like, shape (3,-1) """
         path_objective = np.asarray(path_objective).reshape(3, -1)
