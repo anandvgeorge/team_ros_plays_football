@@ -369,7 +369,8 @@ class BaseRobotRunner(object):
             # within the boundary
             if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
                 pruned_path.append(self.path[:,idx])
-        self.path = np.column_stack(pruned_path)
+        if (len(pruned_path)):
+            self.path = np.column_stack(pruned_path)
 
     def obstacleAwarePath(self, obstacleConf, rb = 0.025):
         robotPosition = self.getRobotConf()

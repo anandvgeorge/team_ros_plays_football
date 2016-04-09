@@ -34,8 +34,8 @@ class Attacker(base_robot.BaseRobotRunner):
         cc=self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
         if cc==0:
             goal = (-1.5+3*np.random.rand(), self.goal_p)
-            self.path, self.status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal, kick=True)
-            
+            self.path, self.status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal, kick=True, vKick=25)
+            self.prunePath(xlim=0.45, ylim=0.7)
 
 class Goalie(base_robot.BaseRobotRunner):
     def __init__(self, goal_pos=0.72, *args, **kwargs):
@@ -48,13 +48,14 @@ class Goalie(base_robot.BaseRobotRunner):
         self.keepGoal2(self.getRobotConf(self.bot), self.goal)
         
 class Dumb(base_robot.BaseRobotRunner):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, v=30, *args, **kwargs):
         """init for Dumb robot"""
         super(Dumb, self).__init__(*args, **kwargs)
+        self.vmax=v
         
     def robotCode(self):
         """inner while loop for Dumb robot"""
-        vRobot = v2PosB(self.getRobotConf(self.bot), self.ballEngine.getBallPose(),30)
+        vRobot = v2PosB(self.getRobotConf(self.bot), self.ballEngine.getBallPose(),self.vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])
 
 class Master(base_robot.MultiRobotCyclicExecutor):
@@ -82,11 +83,15 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 #                time.sleep(1)
 
 if __name__ == '__main__':
-    master = Master(ip='127.0.0.1')
+    master = Master(ip='192.168.0.100') # 127.0.0.1
     master.addRobot(Goalie(goal_pos=-0.72, color='Red', number=1, clientID=master.clientID))
-    master.addRobot(Dumb(color='Red', number=2, clientID=master.clientID))
-    master.addRobot(Dumb(color='Red', number=3, clientID=master.clientID))
-    master.addRobot(Goalie(goal_pos= 0.72, color='Blue', number=1, clientID=master.clientID))
-    master.addRobot(Dumb(color='Blue', number=2, clientID=master.clientID))
-    master.addRobot(Dumb(color='Blue', number=3, clientID=master.clientID))
+#    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=2, clientID=master.clientID))
+    master.addRobot(Attacker(goal_pos= 0.72, color='Red', number=3, clientID=master.clientID))
+    master.addRobot(Dumb(v=25, color='Red', number=2, clientID=master.clientID))
+#    master.addRobot(Dumb(v=26, color='Red', number=3, clientID=master.clientID))
+#    master.addRobot(Goalie(goal_pos= 0.72, color='Blue', number=1, clientID=master.clientID))
+##    master.addRobot(Dumb(v=24, color='Blue', number=2, clientID=master.clientID))
+##    master.addRobot(Dumb(v=31, color='Blue', number=3, clientID=master.clientID))
+#    master.addRobot(Attacker(goal_pos=-0.72, color='Blue', number=2, clientID=master.clientID))
+#    master.addRobot(Attacker(goal_pos=-0.72, color='Blue', number=3, clientID=master.clientID))
     master.run()

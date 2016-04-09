@@ -29,13 +29,13 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
         cc=1
         while cc:
-            t=time.time()
-            self.keepGoal2(self.getRobotConf())
-#            self.driveMotor(0, 0)
-            print 'loop time'
-            print t-time.time()
-            time.sleep(0.01)
-            
+#            t=time.time()
+#            self.keepGoal2(self.getRobotConf())
+##            self.driveMotor(0, 0)
+#            print 'loop time'
+#            print t-time.time()
+#            time.sleep(0.01)
+            print self.getRobotConf()
         """ to measure the trajectory of the robot and ball during shoot
         need to be used with pass_axample.m matlab script"""
 #        goal = [0.0, 0.0]
