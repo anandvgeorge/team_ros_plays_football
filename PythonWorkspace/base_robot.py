@@ -15,7 +15,7 @@ import threading
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
     interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize,
-    prox_sens_read, force_repulsion, v2PosB)
+    prox_sens_read, force_repulsion, v2PosB, smoothPath)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
