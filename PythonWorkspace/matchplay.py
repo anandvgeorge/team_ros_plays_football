@@ -10,6 +10,16 @@ import matplotlib.pyplot as plt
 from idash import IDash
 from robot_helpers import (passPath, v2PosB)
 
+class Player(base_robot.BaseRobotRunner):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def robotCode(self, position, *args, **kwargs):
+        if position == 'goalie'
+            self.goalie_robotCode(*args, **kwargs)
+            pass
+            # etc...
+
 class MidFielder(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         """init for each robot"""
