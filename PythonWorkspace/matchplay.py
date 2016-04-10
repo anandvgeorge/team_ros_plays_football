@@ -48,7 +48,7 @@ class Player(base_robot.BaseRobotRunner):
         elif role == 'dumb':
             self.dumb_robotCode(*args, **kwargs)
 
-    def goalie_robotCode(self):
+    def goalie_robotCode(self, *args, **kwargs):
         """inner while loop for Goalie robot"""
         self.keepGoal2(self.getRobotConf(self.bot), self.goal)
 
@@ -156,24 +156,29 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             # robots have been added
             self.color = self.bots[0].color
             self.roles = ['attacker', 'midfielder', 'goalie']
-            striker, middie, goalie = self.bots
 
-            activezone = 0 # striker starts first
+            activeidx = 0 # striker starts first
 
             t0 = time.time()
             while time.time() - t0 < 180:
                 self.ballEngine.update()
 
-                assert activezone != 2 # now only have active 0,1
+                assert activeidx != 2 # now only have active 0,1
+                activebot = self.bots[activeidx]
+                passiveidx = not activeidx;
 
-                activebot = self.bots[activezone]
-                activebot.robotCode(self.ballEngine, self.getObstacleConfs(activezone))
+                for idx in len(self.bots):
+                    if idx == passiveidx:
+                        self.bots[idx].passiveCode(
+                            role=self.roles[idx],
+                            ballEngine=self.ballEngine,
+                            obstacleConfs=self.getObstacleConfs(passiveidx))
 
-                passivezone = not activezone;
-                passivebot = self.bots[passivezone]
-                passivebot.passiveCode(self.ballEngine, self.getObstacleConfs(passivezone))
-
-                goalie.robotCode()
+                    else: # regular robotCode
+                        self.bots[idx].robotCode(
+                            role=self.roles[idx],
+                            ballEngine=self.ballEngine,
+                            obstacleConfs=self.getObstacleConfs(activeidx))
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
@@ -201,10 +206,10 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     if velocity_measure < 1.0: # start kicking while ball is moving...
                         for bot in self.bots:
                             bot.executing = False
-                        if closest_zone != activezone: # success
+                        if closest_zone != activeidx: # success
                             # increment what is the new active zone
                             activebot.setMotorVelocities(0,0)
-                            activezone = not activezone
+                            activeidx = not activeidx
 
                 self.idash.plotframe()
                 print activebot.executing
