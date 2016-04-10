@@ -210,7 +210,8 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 activebot_displacement = np.sqrt((activebot.conf2[0] - activebot.conf0[0])**2 + (activebot.conf2[1] - activebot.conf0[1])**2)
                 if activebot_displacement < 0.003:
                     # activebot has gotten stuck!!
-                    self.roles[activeidx] = 'dumb'
+                    # self.roles[activeidx] = 'dumb'
+                    pass
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
