@@ -73,11 +73,11 @@ class Player(base_robot.BaseRobotRunner):
         if not self.executing:
             self.p0 = self.ballEngine.getBallPose()
             self.path, self.status = passPath(
-                self.getRobotConf(self.bot), self.p0, self.passPos, kick=True)
+                self.getRobotConf(self.bot), self.p0, self.passPos, kick=False, vmax=20, vr=20)
 
             self.prunePath()
             # avoid any obstacles
-            self.multiObstacleAwarePath(obstacleConfs, 0.07)
+            self.multiObstacleAwarePath(obstacleConfs, 0.05)
 
             # avoid wall boundaries
             self.prunePath()
@@ -91,12 +91,12 @@ class Player(base_robot.BaseRobotRunner):
         if not self.executing:
             self.p0 = self.ballEngine.getBallPose()
             self.target = aim(goaliePosition,self.color)
-            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True)
+            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True, vmax=20, vr=20)
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
             self.prunePath()
-            self.multiObstacleAwarePath(obstacleConfs, 0.07)
+            self.multiObstacleAwarePath(obstacleConfs, 0.05)
             self.prunePath()
 
             self.executing = True
@@ -105,7 +105,7 @@ class Player(base_robot.BaseRobotRunner):
 
     def dumb_robotCode(self, *args, **kwargs):
         """inner while loop for Dumb robot"""
-        vRobot = v2PosB(self.getRobotConf(self.bot), np.array(self.ballEngine.getBallPose()) + 0.1*(np.random.rand(2)-0.5),30)
+        vRobot = v2PosB(self.getRobotConf(self.bot), np.array(self.ballEngine.getBallPose()) + 0.1*(np.random.rand(2)-0.5),20)
         self.setMotorVelocities(vRobot[0], vRobot[1])
 
 # class Goalie(base_robot.BaseRobotRunner):
@@ -181,9 +181,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 print self.roles,
                 print offense
                 if offense:
-                    self.roles[1] = 'attacker'
-                else: 
-                    self.roles[1] = 'midfielder'
+                    if self.roles[1] != 'dumb':
+                        self.roles[1] = 'attacker'
+                else:
+                    if self.roles[1] != 'dumb':
+                        self.roles[1] = 'midfielder'
                     print 'FUCK YOU STUPID'
 
                 print '2. Print:',
@@ -220,9 +222,9 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             # not his side -- get into position
                             else:
                                 if self.bots[idx].color == 'Red':
-                                    passivePos = [0.3, 0.2, 0]
+                                    passivePos = [0.2, 0.3, 0]
                                 else:
-                                    passivePos = [0.3, -0.2, 0]
+                                    passivePos = [0.2, -0.3, 0]
                                 self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(secondaryidx),
@@ -236,9 +238,9 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                                     goaliePosition = self.findOppGoalieConf())
                             else:
                                 if self.bots[idx].color == 'Red':
-                                    passivePos = [-0.3, 0.2, 0]
+                                    passivePos = [-0.2, 0.3, 0]
                                 else:
-                                    passivePos = [-0.3, -0.2, 0]
+                                    passivePos = [-0.2, -0.3, 0]
                                 self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(secondaryidx),
@@ -276,6 +278,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     except:
                         pass
                     plt.plot(-bally,ballx, 'ro')
+                    plt.plot(-self.bots[secondaryidx].path[1,:], self.bots[secondaryidx].path[0,:], 'b.')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.8, 0.8]) # y axis in the field
                     plt.ylim([-0.7, 0.7]) # x axis in the field
@@ -283,13 +286,12 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                 self.idash.add(vizBots)
 
-                # if time.time() - activebot.time_started_2b_dumb > 3:
-                #     self.roles = self.originalRoles
+                if time.time() - activebot.time_started_2b_dumb > 2:
+                    self.roles = self.originalRoles[:]
 
-                if activebot.path.shape[1] == 1:
-                    pass
-                    # self.roles[activeidx] = 'dumb'
-                    # activebot.time_started_2b_dumb = time.time()
+                if activebot.path.shape[1] < 5:
+                    self.roles[activeidx] = 'dumb'
+                    activebot.time_started_2b_dumb = time.time()
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
@@ -326,8 +328,8 @@ if __name__ == '__main__':
         port=19999
         oppColor = 'Blue'
 
-    bluemaster = Master(ip='172.23.201.40', port=port)
-    # bluemaster = Master(port=port)
+    # bluemaster = Master(ip='172.23.201.40', port=port)
+    bluemaster = Master(port=port)
     # Order of which we addRobots kinda important...
     # self.bots -> Attacker, Midfielder, Goalie
     bluemaster.addRobot(Player(color=color, number=1, clientID=bluemaster.clientID))
