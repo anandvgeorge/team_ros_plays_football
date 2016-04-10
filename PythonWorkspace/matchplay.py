@@ -23,7 +23,6 @@ class MidFielder(base_robot.BaseRobotRunner):
 
     def robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for each robots"""
-        print("MidFielder")
         # pass randomly now
         # TODO: pass where less people are
 
@@ -70,7 +69,6 @@ class Attacker(base_robot.BaseRobotRunner):
 
     def robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for Attacker robot"""
-        print("Attacker")
         if not self.executing:
             self.p0 = ballEngine.getBallPose()
             self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.goal, kick=True)
@@ -206,6 +204,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             activezone = not activezone
 
                 self.idash.plotframe()
+                print activebot.executing
 
 if __name__ == '__main__':
     import sys
