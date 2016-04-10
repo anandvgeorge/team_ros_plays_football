@@ -168,12 +168,14 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 assert activezone != 2 # now only have active 0,1
 
+                obstacleConfs = sefl.getObstacleConfs()
+
                 activebot = self.bots[activezone]
-                activebot.robotCode(self.ballEngine)
+                activebot.robotCode(self.ballEngine, obstacleConfs)
 
                 passivezone = not activezone;
                 passivebot = self.bots[passivezone]
-                passivebot.passiveCode(self.ballEngine)
+                passivebot.passiveCode(self.ballEngine, obstacleConfs)
 
                 goalie.robotCode()
 
@@ -191,9 +193,6 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     plt.title('Red = RCV, Green = Active')
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                 self.idash.add(vizBots)
-                # run all
-                # for bot in self.bots:
-                #     bot.robotCode(self.ballEngine)
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
