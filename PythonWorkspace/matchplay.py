@@ -56,7 +56,7 @@ class Player(base_robot.BaseRobotRunner):
         """inner while loop for Goalie robot"""
         self.keepGoal2(self.getRobotConf(self.bot), self.ourGoal)
 
-    def midfielder_robotCode(self, ballEngine, obstacleConfs, goaliePosition):
+    def midfielder_robotCode(self, obstacleConfs, goaliePosition):
         """inner while loop for each robots"""
         # pass randomly now
         # TODO: pass where less people are
@@ -71,7 +71,7 @@ class Player(base_robot.BaseRobotRunner):
         self.passPos = [random_x_mag*random_x_dir, random_y]
 
         if not self.executing:
-            self.p0 = ballEngine.getBallPose()
+            self.p0 = self.ballEngine.getBallPose()
             self.path, self.status = passPath(
                 self.getRobotConf(self.bot), self.p0, self.passPos, kick=True)
 
@@ -85,10 +85,10 @@ class Player(base_robot.BaseRobotRunner):
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
-    def attacker_robotCode(self, ballEngine, obstacleConfs, goaliePosition):
+    def attacker_robotCode(self, obstacleConfs, goaliePosition):
         """inner while loop for Attacker robot"""
         if not self.executing:
-            self.p0 = ballEngine.getBallPose()
+            self.p0 = self.ballEngine.getBallPose()
             self.target = aim(goaliePosition,self.color)
             self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True)
 
@@ -178,13 +178,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     if idx == passiveidx:
                         self.bots[idx].passiveCode(
                             role=self.roles[idx],
-                            ballEngine=self.ballEngine,
                             obstacleConfs=self.getObstacleConfs(passiveidx))
 
                     else: # regular robotCode
                         self.bots[idx].robotCode(
                             role=self.roles[idx],
-                            ballEngine=self.ballEngine,
                             obstacleConfs=self.getObstacleConfs(activeidx),
                             goaliePosition = self.findOppGoalieConf())
 
@@ -208,7 +206,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 self.idash.add(vizBots)
 
                 if time.time() - activebot.time_started_2b_dumb > 3:
-                    self.roles[activeidx] = self.originalRoles[activeidx]
+                    self.roles = self.originalRoles
 
                 print self.roles
                 # activebot.conf2 = activebot.conf1
@@ -218,8 +216,9 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 # if activebot_displacement < 0.003:
 
                 if activebot.path.shape[1] == 1:
-                    self.roles[activeidx] = 'dumb'
-                    activebot.time_started_2b_dumb = time.time()
+                    pass
+                    # self.roles[activeidx] = 'dumb'
+                    # activebot.time_started_2b_dumb = time.time()
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
@@ -228,15 +227,15 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
                 closest_zone = self.getClosestZone(p1)
                 # if dist_from_start > 0.01: # the ball has been touched
-                    # if velocity_measure < 0.003: # wait til velocity reaches zero
-                if True:
-                    if velocity_measure < 1.0: # start kicking while ball is moving...
-                        for bot in self.bots:
-                            bot.executing = False
-                        if closest_zone != activeidx: # success
-                            # increment what is the new active zone
-                            activebot.setMotorVelocities(0,0)
-                            activeidx = not activeidx
+                #     if velocity_measure < 0.003: # wait til velocity reaches zero
+                # if True:
+                    # if velocity_measure < 1.0: # start kicking while ball is moving...
+                for bot in self.bots:
+                    bot.executing = False
+                if closest_zone != activeidx: # success
+                    # increment what is the new active zone
+                    activebot.setMotorVelocities(0,0)
+                    activeidx = not activeidx
 
                 self.idash.plotframe()
 
@@ -256,7 +255,8 @@ if __name__ == '__main__':
         port=19999
         oppColor = 'Blue'
 
-    bluemaster = Master(ip='172.23.201.40', port=port)
+    # bluemaster = Master(ip='172.23.201.40', port=port)
+    bluemaster = Master(port=port)
     # Order of which we addRobots kinda important...
     # self.bots -> Attacker, Midfielder, Goalie
     bluemaster.addRobot(Player(color=color, number=1, clientID=bluemaster.clientID))
