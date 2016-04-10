@@ -42,7 +42,7 @@ class Player(base_robot.BaseRobotRunner):
         if role == 'goalie':
             self.goalie_robotCode(*args, **kwargs)
         elif role == 'midfielder':
-            self.midFielder_robotCode(*args, **kwargs)
+            self.midfielder_robotCode(*args, **kwargs)
         elif role == 'attacker':
             self.attacker_robotCode(*args, **kwargs)
         elif role == 'dumb':
