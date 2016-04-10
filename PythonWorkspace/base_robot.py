@@ -234,8 +234,10 @@ class BaseRobotRunner(object):
         """ OUR ROBOT CODE GOES HERE """
         return
 
-    def passiveCode(self, ballEngine, obstacleConfs=None):
+    def passiveCode(self, role, ballEngine, obstacleConfs=None):
         """inner while loop for when attacker is not active"""
+        # FIXME: role does nothing, but maybe there should be different
+        # modes of operation for passive roles
         if not self.executing:
             self.status = 0 # for moving freely, without theta adjust
 
