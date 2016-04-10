@@ -548,7 +548,7 @@ class MultiRobotRunner(object):
         index = 0
         for i in xrange(len(self.oppBots)):
             oppBotX, oppBotY, _ = self.oppBots[i].getRobotConf()
-            distance = sqrt((oppBotX - oppGoalCenter[0])**2 + (oppBotY - oppGoalCenter[1])**2)
+            distance = np.sqrt((oppBotX - oppGoalCenter[0])**2 + (oppBotY - oppGoalCenter[1])**2)
             if distance < distance2Goal:
                 distance2Goal = distance
                 index = i

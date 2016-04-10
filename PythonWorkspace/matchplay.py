@@ -8,7 +8,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from idash import IDash
-from robot_helpers import (passPath, v2PosB)
+from robot_helpers import (passPath, v2PosB, aim)
 
 class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
@@ -184,14 +184,14 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
-                    targetx, targety = activebot.target
                     plt.hold('on')
                     try:
                         plt.plot(-self.activebot.passPos[1], self.activebot.passPos, 'ro')
                     except:
                         pass
                     plt.plot(-acty, actx, 'g+')
-                    plt.plot(-targety, targetx, 'm*')
+                    if self.roles[activeidx] == 'attacker':
+                        plt.plot(-activebot.target[1], activebot.target[0], 'm*')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.75, 0.75]) # y axis in the field
                     plt.ylim([-0.5, 0.5]) # x axis in the field
