@@ -252,7 +252,7 @@ def obstacleDetector(obstacleConf, path,rb=0.025):
         dis = math.sqrt((obstacleConf[0]-path[0,i])**2 + (obstacleConf[1]-path[1,i])**2)
         # print dis
         if dis <= 2*rb and dis != 0: # TODO
-            print "WARNING: Obstacle detected"
+            # print "WARNING: Obstacle detected"
             index.append(i)
             distance.append(dis)
         #obstacleNo += 1

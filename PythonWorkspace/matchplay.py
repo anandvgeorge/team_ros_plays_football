@@ -205,7 +205,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             activebot.setMotorVelocities(0,0)
                             activezone = not activezone
 
-                # self.idash.plotframe()
+                self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys
