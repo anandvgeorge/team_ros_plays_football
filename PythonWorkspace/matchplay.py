@@ -210,12 +210,13 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 if time.time() - activebot.time_started_2b_dumb > 3:
                     self.roles[activeidx] = self.originalRoles[activeidx]
 
-                activebot.conf2 = activebot.conf1
-                activebot.conf1 = activebot.conf0
-                activebot.conf0 = activebot.getRobotConf()
-                activebot_displacement = np.sqrt((activebot.conf2[0] - activebot.conf0[0])**2 + (activebot.conf2[1] - activebot.conf0[1])**2)
-                if activebot_displacement < 0.003:
-                    # activebot has gotten stuck!!
+                # activebot.conf2 = activebot.conf1
+                # activebot.conf1 = activebot.conf0
+                # activebot.conf0 = activebot.getRobotConf()
+                # activebot_displacement = np.sqrt((activebot.conf2[0] - activebot.conf0[0])**2 + (activebot.conf2[1] - activebot.conf0[1])**2)
+                # if activebot_displacement < 0.003:
+
+                if activebot.path.shape[1] == 1:
                     self.roles[activeidx] = 'dumb'
                     activebot.time_started_2b_dumb = time.time()
 
@@ -237,7 +238,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             activeidx = not activeidx
 
                 self.idash.plotframe()
-                print activebot.executing
+                print self.roles
 
 if __name__ == '__main__':
     import sys
