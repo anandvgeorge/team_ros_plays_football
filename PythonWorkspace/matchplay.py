@@ -190,10 +190,12 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     except:
                         pass
                     plt.plot(-acty, actx, 'g+')
-                    if self.roles[activeidx] == 'attacker':
+                    try:
                         plt.plot(-activebot.target[1], activebot.target[0], 'm*')
+                    except:
+                        pass
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
-                    plt.xlim([-0.75, 0.75]) # y axis in the field
+                    plt.xlim([-0.8, 0.8]) # y axis in the field
                     plt.ylim([-0.5, 0.5]) # x axis in the field
                     plt.title('Red = RCV, Green = Active')
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
