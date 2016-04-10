@@ -14,6 +14,9 @@ class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         super(Player, self).__init__(*args, **kwargs)
         self.executing = False
+        self.conf2 = self.getRobotConf()
+        self.conf1 = self.conf2
+        self.conf0 = self.conf2
 
         self.attackerInit()
         self.goalieInit()
@@ -96,7 +99,7 @@ class Player(base_robot.BaseRobotRunner):
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
-    def dumb_robotCode(self):
+    def dumb_robotCode(self, *args, **kwargs):
         """inner while loop for Dumb robot"""
         vRobot = v2PosB(self.getRobotConf(self.bot), self.ballEngine.getBallPose(),30)
         self.setMotorVelocities(vRobot[0], vRobot[1])
@@ -196,10 +199,18 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         pass
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.8, 0.8]) # y axis in the field
-                    plt.ylim([-0.5, 0.5]) # x axis in the field
+                    plt.ylim([-0.7, 0.7]) # x axis in the field
                     plt.title('Red = RCV, Green = Active')
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                 self.idash.add(vizBots)
+
+                activebot.conf2 = activebot.conf1
+                activebot.conf1 = activebot.conf0
+                activebot.conf0 = activebot.getRobotConf()
+                activebot_displacement = np.sqrt((activebot.conf2[0] - activebot.conf0[0])**2 + (activebot.conf2[1] - activebot.conf0[1])**2)
+                if activebot_displacement < 0.003:
+                    # activebot has gotten stuck!!
+                    self.roles[activeidx] = 'dumb'
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
