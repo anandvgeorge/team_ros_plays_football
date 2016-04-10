@@ -5,11 +5,10 @@ TODO: say this same phrase in a football context, in the german language haha.
 import vrep
 import base_robot
 import numpy as np
-from scipy.spatial.distance import cdist
 import time
 import matplotlib.pyplot as plt
 from idash import IDash
-from robot_helpers import smoothPath, passPath, ThetaRange
+from robot_helpers import (passPath, v2PosB)
 
 class MidFielder(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
@@ -129,7 +128,6 @@ class DumbMaster(base_robot.MultiRobotCyclicExecutor):
 
             t0 = time.time()
             while time.time() - t0 < 30:
-                t=time.time()
                 for bot in self.bots:
                     bot.robotCode()
 
@@ -159,7 +157,6 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             self.color = self.bots[0].color
             striker, middie, goalie = self.bots
 
-            first_loop = True
             activezone = 0 # striker starts first
 
             t0 = time.time()
@@ -168,14 +165,12 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 assert activezone != 2 # now only have active 0,1
 
-                obstacleConfs = self.getObstacleConfs()
-
                 activebot = self.bots[activezone]
-                activebot.robotCode(self.ballEngine, obstacleConfs)
+                activebot.robotCode(self.ballEngine, self.getObstacleConfs(activezone))
 
                 passivezone = not activezone;
                 passivebot = self.bots[passivezone]
-                passivebot.passiveCode(self.ballEngine, obstacleConfs)
+                passivebot.passiveCode(self.ballEngine, self.getObstacleConfs(passivezone))
 
                 goalie.robotCode()
 
