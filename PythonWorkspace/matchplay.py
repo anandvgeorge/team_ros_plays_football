@@ -17,6 +17,7 @@ class Player(base_robot.BaseRobotRunner):
         self.conf2 = np.array(self.getRobotConf())
         self.conf1 = self.conf2 + np.random.randn(3)*0.1
         self.conf0 = self.conf2 + np.random.randn(3)*0.1
+        self.time_started_2b_dumb = 0
 
         self.attackerInit()
         self.goalieInit()
@@ -160,6 +161,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
             # robots have been added
             self.color = self.bots[0].color
+            self.originalRoles = ['attacker', 'midfielder', 'goalie']
             self.roles = ['attacker', 'midfielder', 'goalie']
 
             activeidx = 0 # striker starts first
@@ -205,14 +207,17 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                 self.idash.add(vizBots)
 
+                if time.time() - activebot.time_started_2b_dumb > 3:
+                    self.roles[activeidx] = self.originalRoles[activeidx]
+
                 activebot.conf2 = activebot.conf1
                 activebot.conf1 = activebot.conf0
                 activebot.conf0 = activebot.getRobotConf()
                 activebot_displacement = np.sqrt((activebot.conf2[0] - activebot.conf0[0])**2 + (activebot.conf2[1] - activebot.conf0[1])**2)
                 if activebot_displacement < 0.003:
                     # activebot has gotten stuck!!
-                    # self.roles[activeidx] = 'dumb'
-                    pass
+                    self.roles[activeidx] = 'dumb'
+                    activebot.time_started_2b_dumb = time.time()
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
