@@ -18,7 +18,7 @@ class MidFielder(base_robot.BaseRobotRunner):
         self.executing = False
 
         # set passive position
-        self.passivePos = [0, 0.2, -np.pi/2]
+        self.passivePos = np.array([0, 0.2, -np.pi/2])
         if self.color == 'Red':
             self.passivePos[1:] *= -1
 
@@ -65,7 +65,7 @@ class Attacker(base_robot.BaseRobotRunner):
             self.goal[1] *= -1
 
         # set passive position
-        self.passivePos = [0, -0.2, np.pi/2]
+        self.passivePos = np.array([0, -0.2, np.pi/2])
         if self.color == 'Red':
             self.passivePos[1:] *= -1
 
