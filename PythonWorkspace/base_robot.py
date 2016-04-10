@@ -402,7 +402,7 @@ class BaseRobotRunner(object):
                     if np.abs(self.path[0,idx]) < (0.18 + tol) and np.abs(self.path[1,idx]) < (0.705 - (0.07+tol)):
                         pruned_path.append(self.path[:,idx])
                 else:
-                    if np.abs(self.path[0,idx]) < (0.18 + tol) and self.path[1,idx] < (-0.705 + (0.07+tol)):
+                    if np.abs(self.path[0,idx]) < (0.18 + tol) and self.path[1,idx] > (-0.705 + (0.07+tol)):
                         pruned_path.append(self.path[:,idx])
 
         if (len(pruned_path)):
