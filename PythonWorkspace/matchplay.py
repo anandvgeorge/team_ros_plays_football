@@ -103,7 +103,7 @@ class Player(base_robot.BaseRobotRunner):
 
     def dumb_robotCode(self, *args, **kwargs):
         """inner while loop for Dumb robot"""
-        vRobot = v2PosB(self.getRobotConf(self.bot), self.ballEngine.getBallPose(),30)
+        vRobot = v2PosB(self.getRobotConf(self.bot), np.array(self.ballEngine.getBallPose()) + 0.1*(np.random.rand(2)-0.5),30)
         self.setMotorVelocities(vRobot[0], vRobot[1])
 
 # class Goalie(base_robot.BaseRobotRunner):
