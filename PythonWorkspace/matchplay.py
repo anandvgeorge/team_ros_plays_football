@@ -52,7 +52,7 @@ class Player(base_robot.BaseRobotRunner):
         """inner while loop for Goalie robot"""
         self.keepGoal2(self.getRobotConf(self.bot), self.ourGoal)
 
-    def midfielder_robotCode(self, ballEngine, obstacleConfs=None):
+    def midfielder_robotCode(self, ballEngine, obstacleConfs, goaliePosition):
         """inner while loop for each robots"""
         # pass randomly now
         # TODO: pass where less people are
@@ -81,11 +81,12 @@ class Player(base_robot.BaseRobotRunner):
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
-    def attacker_robotCode(self, ballEngine, obstacleConfs=None):
+    def attacker_robotCode(self, ballEngine, obstacleConfs, goaliePosition):
         """inner while loop for Attacker robot"""
         if not self.executing:
             self.p0 = ballEngine.getBallPose()
-            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.oppGoal, kick=True)
+            self.target = aim(goaliePosition,self.color)
+            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True)
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
@@ -178,16 +179,19 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         self.bots[idx].robotCode(
                             role=self.roles[idx],
                             ballEngine=self.ballEngine,
-                            obstacleConfs=self.getObstacleConfs(activeidx))
+                            obstacleConfs=self.getObstacleConfs(activeidx),
+                            goaliePosition = self.findOppGoalieConf())
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
+                    targetx, targety = activebot.target
                     plt.hold('on')
                     try:
                         plt.plot(-self.activebot.passPos[1], self.activebot.passPos, 'ro')
                     except:
                         pass
                     plt.plot(-acty, actx, 'g+')
+                    plt.plot(-targety, targetx, 'm*')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.75, 0.75]) # y axis in the field
                     plt.ylim([-0.5, 0.5]) # x axis in the field

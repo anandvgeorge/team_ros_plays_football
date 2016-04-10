@@ -317,6 +317,24 @@ def force_repulsion(k_repulse, rho, rho_0):
     else:
         return 0
 
+def aim(goaliePosition, ownColor):
+    ballRadius = 0.05
+    leftGoalPost = [0.2, -0.75] # position of left goal post
+    rightGoalPost = [-0.2, 0.75]# position of right goal post       
+    tolerance = 0.01
+    sign = 1
+    gapRight = abs(goaliePosition[0] - rightGoalPost[0])
+    gapLeft = abs(goaliePosition[0] - leftGoalPost[0])
+    
+    if gapRight >= gapLeft:
+        xAim = rightGoalPost[0] + ballRadius + tolerance
+    else:
+        xAim = leftGoalPost[0] - ballRadius - tolerance
+    
+    if ownColor == 'Blue':
+        sign = -1
+    return [xAim, 0.75*sign]
+
 class ThetaRange(object):
     """ Class to organize methods related to shifts and transformations of Theta or Angles """
 

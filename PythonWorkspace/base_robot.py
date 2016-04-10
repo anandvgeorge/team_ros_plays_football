@@ -368,7 +368,7 @@ class BaseRobotRunner(object):
         a=math.atan2(bp[0],Gy-bp[1])
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
         vRobot = v2PosB(robotConf, rp, 0.9*vmax)
-        self.setMotorVelocities(vRobot[0], vRobot[1])        
+        self.setMotorVelocities(vRobot[0], vRobot[1])            
         
     def add_to_path(self, path_objective):
         """ path objective is array-like, shape (3,-1) """
@@ -538,6 +538,22 @@ class MultiRobotRunner(object):
 
     def addOppRobot(self, instance):
         self.oppBots.append(instance)
+
+    def findOppGoalieConf(self):
+        if self.oppBots[0].color == 'Red':
+            oppGoalCenter = (0, 0.75)
+        else:
+            oppGoalCenter = (0, -0.75)
+        distance2Goal = 9999
+        index = 0
+        for i in xrange(len(self.oppBots)):
+            oppBotX, oppBotY, _ = self.oppBots[i].getRobotConf()
+            distance = sqrt((oppBotX - oppGoalCenter[0])**2 + (oppBotY - oppGoalCenter[1])**2)
+            if distance < distance2Goal:
+                distance2Goal = distance
+                index = i
+        oppGoalieHandle = self.oppBots[index].bot
+        return self.oppBots[index].getRobotConf()
 
     def getObstacleConfs(self, myself):
         """
