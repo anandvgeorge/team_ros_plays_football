@@ -393,22 +393,21 @@ class BaseRobotRunner(object):
         ylim: number
             the magnitude of the bounds of the field in the y direction
         """
-        pruned_path = []
+        tol = 0.05
         for idx in range(self.path.shape[1]):
+            exceededX = np.abs(self.path[0,idx]) > xlim
+            exceededY = np.abs(self.path[1,idx]) > ylim
             # within the boundary
-            if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
-                #pruned_path.append(self.path[:,idx])
-                tol = 0.02
-                    # Ex=0.18, Ey=0.07
-                    # ylim = 0.705
-                if not (np.abs(self.path[0,idx]) < (0.18 + tol) and np.abs(self.path[1,idx]) > (0.705 - (0.07+tol))):
-                    pruned_path.append(self.path[:,idx])
-
-        if (len(pruned_path)):
-            self.path = np.column_stack(pruned_path)
-        else:
-            rc=self.getRobotConf()
-            self.path = np.array([[rc[0]],[rc[1]],[20]])
+            if exceededX:
+                if self.path[0,idx] >= 0:
+                    self.path[0,idx] = xlim - tol
+                else:
+                    self.path[0,idx] = - (xlim - tol)
+            if exceededY:
+                if self.path[1,idx] >= 0:
+                    self.path[1,idx] = ylim - tol
+                else:
+                    self.path[1,idx] = - (ylim - tol)
 
     def obstacleAwarePath(self, obstacleConf, rb = 0.025):
         robotPosition = self.getRobotConf()
