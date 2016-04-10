@@ -83,7 +83,7 @@ class Player(base_robot.BaseRobotRunner):
 
             self.executing = True
 
-        self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
+        self.followPath(self.getRobotConf(self.bot), 0, rb=0.05)
 
     def attacker_robotCode(self, obstacleConfs, goaliePosition):
         """inner while loop for Attacker robot"""
@@ -99,7 +99,7 @@ class Player(base_robot.BaseRobotRunner):
 
             self.executing = True
 
-        self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
+        self.followPath(self.getRobotConf(self.bot), 0, rb=0.05)
 
     def dumb_robotCode(self, *args, **kwargs):
         """inner while loop for Dumb robot"""
@@ -188,16 +188,19 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
+                    ballx, bally = self.ballEngine.getBallPose()
                     plt.hold('on')
                     try:
                         plt.plot(-self.activebot.passPos[1], self.activebot.passPos, 'ro')
                     except:
                         pass
                     plt.plot(-acty, actx, 'g+')
+                    plt.plot(-bally, ballx, 'ro')
                     try:
                         plt.plot(-activebot.target[1], activebot.target[0], 'm*')
                     except:
                         pass
+
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.8, 0.8]) # y axis in the field
                     plt.ylim([-0.7, 0.7]) # x axis in the field
@@ -255,8 +258,8 @@ if __name__ == '__main__':
         port=19999
         oppColor = 'Blue'
 
-    # bluemaster = Master(ip='172.23.201.40', port=port)
-    bluemaster = Master(port=port)
+    bluemaster = Master(ip='172.23.201.40', port=port)
+    # bluemaster = Master(port=port)
     # Order of which we addRobots kinda important...
     # self.bots -> Attacker, Midfielder, Goalie
     bluemaster.addRobot(Player(color=color, number=1, clientID=bluemaster.clientID))
