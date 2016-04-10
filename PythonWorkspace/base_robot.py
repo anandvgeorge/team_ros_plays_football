@@ -537,13 +537,6 @@ class MultiRobotRunner(object):
     def addOppRobot(self, instance):
         self.oppBots.append(instance)
 
-    def getObstacleConfs(self):
-        obstacleConfs = [self.oppBots[i].getRobotConf() for i in range(len(self.oppBots))]
-        # FIXME: includes the own bot; untested
-        # TODO: maybe include ballConf, if you dont want to hit it
-        obstacleConfs.extend([self.bots[i].getRobotConf() for i in range(len(self.bots))])
-        return obstacleConfs
-
     def run(self):
         if self.clientID!=-1:
             _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
