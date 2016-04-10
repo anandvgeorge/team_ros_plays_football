@@ -174,19 +174,33 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 assert activeidx != 2 # now only have active 0,1
                 activebot = self.bots[activeidx]
-                passiveidx = not activeidx;
+                offense = self.roles[activeidx] == 'attacker'
+                if offense:
+                    self.roles[1] = 'attacker'
+                else: 
+                    self.roles[1] = 'midfielder'
+
+                secondaryidx = not activeidx
 
                 for idx in range(len(self.bots)):
-                    if idx == passiveidx:
-                        self.bots[idx].passiveCode(
-                            role=self.roles[idx],
-                            obstacleConfs=self.getObstacleConfs(passiveidx))
+                    if idx == secondaryidx:
+                        if offense:
+                            if self.ballEngine.getBallPose()[0] >= 0:
+                                self.bots[idx].robotCode(
+                                role=self.roles[idx],
+                                obstacleConfs=self.getObstacleConfs(activeidx),
+                                goaliePosition = self.findOppGoalieConf())
+                        else:
+                            self.bots[idx].secondaryCode(
+                                role=self.roles[idx],
+                                obstacleConfs=self.getObstacleConfs(secondaryidx))
 
                     else: # regular robotCode
-                        self.bots[idx].robotCode(
-                            role=self.roles[idx],
-                            obstacleConfs=self.getObstacleConfs(activeidx),
-                            goaliePosition = self.findOppGoalieConf())
+                        if self.ballEngine.getBallPose()[0] < 0:
+                            self.bots[idx].robotCode(
+                                role=self.roles[idx],
+                                obstacleConfs=self.getObstacleConfs(activeidx),
+                                goaliePosition = self.findOppGoalieConf())
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
@@ -212,13 +226,6 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 if time.time() - activebot.time_started_2b_dumb > 3:
                     self.roles = self.originalRoles
 
-                print self.roles
-                # activebot.conf2 = activebot.conf1
-                # activebot.conf1 = activebot.conf0
-                # activebot.conf0 = activebot.getRobotConf()
-                # activebot_displacement = np.sqrt((activebot.conf2[0] - activebot.conf0[0])**2 + (activebot.conf2[1] - activebot.conf0[1])**2)
-                # if activebot_displacement < 0.003:
-
                 if activebot.path.shape[1] == 1:
                     pass
                     # self.roles[activeidx] = 'dumb'
@@ -241,7 +248,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     activebot.setMotorVelocities(0,0)
                     activeidx = not activeidx
 
-                self.idash.plotframe()
+                #self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys

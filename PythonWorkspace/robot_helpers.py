@@ -319,7 +319,7 @@ def force_repulsion(k_repulse, rho, rho_0):
 
 def aim(goaliePosition, ownColor):
     ballRadius = 0.05
-    leftGoalPost = [0.2, -0.75] # position of left goal post
+    leftGoalPost = [0.2, 0.75] # position of left goal post
     rightGoalPost = [-0.2, 0.75]# position of right goal post       
     tolerance = 0.01
     sign = 1
