@@ -168,7 +168,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 assert activezone != 2 # now only have active 0,1
 
-                obstacleConfs = sefl.getObstacleConfs()
+                obstacleConfs = self.getObstacleConfs()
 
                 activebot = self.bots[activezone]
                 activebot.robotCode(self.ballEngine, obstacleConfs)
