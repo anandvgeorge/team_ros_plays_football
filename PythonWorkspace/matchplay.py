@@ -167,7 +167,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 activebot = self.bots[activeidx]
                 passiveidx = not activeidx;
 
-                for idx in len(self.bots):
+                for idx in range(len(self.bots)):
                     if idx == passiveidx:
                         self.bots[idx].passiveCode(
                             role=self.roles[idx],
