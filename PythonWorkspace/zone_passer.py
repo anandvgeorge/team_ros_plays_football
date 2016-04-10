@@ -368,7 +368,8 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     dist_from_goal = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
                     velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
                     closest_zone = self.getClosestZone(p1)
-                    if dist_from_start > 0.01: # the ball has been touched
+                    # if dist_from_start > 0.01: # the ball has been touched
+                    if True:
                          # if velocity_measure < 0.003: # wait til velocity reaches zero
                          if velocity_measure < 1.0: # start kicking while ball is moving...
                          # if dist_from_goal < 0.1: # wait til the ball has entered the predicted zone
