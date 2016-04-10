@@ -213,12 +213,15 @@ if __name__ == '__main__':
     # argv: ['matchplay.py', 'Blue']
     if len(sys.argv) < 2:
         color = 'Blue' # default
+        oppColor = 'Red'
     else:
         color = sys.argv[1]
     if color == 'Blue':
         port=19998
+        oppColor = 'Red'
     else:
         port=19999
+        oppColor = 'Blue'
 
     bluemaster = Master(ip='172.23.201.40', port=port)
     # Order of which we addRobots kinda important...
@@ -226,4 +229,9 @@ if __name__ == '__main__':
     bluemaster.addRobot(Attacker(color=color, number=1, clientID=bluemaster.clientID))
     bluemaster.addRobot(MidFielder(color=color, number=2, clientID=bluemaster.clientID))
     bluemaster.addRobot(Goalie(color=color, number=3, clientID=bluemaster.clientID))
+
+    bluemaster.addOppRobot(Attacker(color=oppColor, number=1, clientID=bluemaster.clientID))
+    bluemaster.addOppRobot(MidFielder(color=oppColor, number=2, clientID=bluemaster.clientID))
+    bluemaster.addOppRobot(Goalie(color=oppColor, number=3, clientID=bluemaster.clientID))
+
     bluemaster.run()
