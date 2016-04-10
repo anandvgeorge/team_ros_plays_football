@@ -173,7 +173,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 passivezone = not activezone;
                 passivebot = self.bots[passivebot]
-                passivebot.
+                passivebot.passiveCode(self.ballEngine)
 
                 goalie.robotCode()
 
