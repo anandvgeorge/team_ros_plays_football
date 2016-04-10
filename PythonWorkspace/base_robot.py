@@ -365,7 +365,7 @@ class BaseRobotRunner(object):
         bp = self.ballEngine.getBallPose()  # ball position
         a=math.atan2(bp[0],Gy-bp[1])
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
-        vRobot = v2PosB(robotConf, rp, vmax*0.9)
+        vRobot = v2PosB(robotConf, rp, 0.9*vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])        
         
     def add_to_path(self, path_objective):
