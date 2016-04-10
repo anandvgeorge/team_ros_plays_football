@@ -94,6 +94,7 @@ class Player(base_robot.BaseRobotRunner):
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
             self.multiObstacleAwarePath(obstacleConfs, 0.07)
+            self.prunePath()
 
             self.executing = True
 
