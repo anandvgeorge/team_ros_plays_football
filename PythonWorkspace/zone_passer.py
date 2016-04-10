@@ -81,7 +81,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         # start ball at zone 4 - 1 (0 indexed)
         ball_start = self.zone_centers[:,3]
         ball_start[1] -= 0.05 # move closer to players center, but further distance q from player
-        #self.ballEngine.setBallPose(ball_start)
+        self.ballEngine.setBallPose(ball_start)
         self.ballEngine.update()
 
         # FIXME: Hardcoded is good for drill, not good for game!
@@ -262,7 +262,9 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     bot_states[rcvbot_idx] = STATE_READY_POS
 
                 # -- STATE MACHINE EXECUTE
-                    # if bot_states[rcvbot_idx] == STATE_READY_POS:
+                    _, proximitySensors = rcvbot.senseObstacles()
+                    if bot_states[rcvbot_idx] == STATE_READY_POS:
+                        rcvbot.receiveBall(proximitySensors)
                     #     rcvp1 = np.array(rcvbot.getRobotConf()[:2])
                     #     rcvp2 = self.zone_corners[:, rcvzone - 1]
                     #     # not yet in position

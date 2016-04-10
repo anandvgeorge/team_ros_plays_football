@@ -360,7 +360,7 @@ class BaseRobotRunner(object):
 
     def receiveBall(self, proximitySensors, interceptVel = 17.5):
         robotPosition = self.getRobotConf()
-        ballPosition = self.BallEngine.getBallPose()
+        ballPosition = self.ballEngine.getBallPose()
         pathNew = np.zeros((3,1))
         pathNew[0,0] = ballPosition[0]
         pathNew[1,0] = ballPosition[1]
