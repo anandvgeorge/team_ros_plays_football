@@ -220,9 +220,9 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             # not his side -- get into position
                             else:
                                 if self.bots[idx].color == 'Red':
-                                    passivePos = [0.3, 0.2]
+                                    passivePos = [0.3, 0.2, 0]
                                 else:
-                                    passivePos = [0.3, -0.2]
+                                    passivePos = [0.3, -0.2, 0]
                                 self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(secondaryidx),
@@ -236,9 +236,9 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                                     goaliePosition = self.findOppGoalieConf())
                             else:
                                 if self.bots[idx].color == 'Red':
-                                    passivePos = [-0.3, 0.2]
+                                    passivePos = [-0.3, 0.2, 0]
                                 else:
-                                    passivePos = [-0.3, -0.2]
+                                    passivePos = [-0.3, -0.2, 0]
                                 self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(secondaryidx),
