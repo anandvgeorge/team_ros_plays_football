@@ -38,24 +38,21 @@ class Player(base_robot.BaseRobotRunner):
         if self.color == 'Red':
             self.goal *= -1
 
-    def robotCode(self, position, *args, **kwargs):
-        if position == 'goalie'
+    def robotCode(self, role, *args, **kwargs):
+        if role == 'goalie':
             self.goalie_robotCode(*args, **kwargs)
-            pass
-            # etc...
+        elif role == 'midfielder':
+            self.midFielder_robotCode(*args, **kwargs)
+        elif role == 'attacker':
+            self.attacker_robotCode(*args, **kwargs)
+        elif role == 'dumb':
+            self.dumb_robotCode(*args, **kwargs)
 
-class MidFielder(base_robot.BaseRobotRunner):
-    def __init__(self, *args, **kwargs):
-        """init for each robot"""
-        super(MidFielder, self).__init__(*args, **kwargs)
-        self.executing = False
+    def goalie_robotCode(self):
+        """inner while loop for Goalie robot"""
+        self.keepGoal2(self.getRobotConf(self.bot), self.goal)
 
-        # set passive position
-        self.passivePos = np.array([0, 0.2, -np.pi/2])
-        if self.color == 'Red':
-            self.passivePos[1:] *= -1
-
-    def robotCode(self, ballEngine, obstacleConfs=None):
+    def midfielder_robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for each robots"""
         # pass randomly now
         # TODO: pass where less people are
@@ -84,24 +81,7 @@ class MidFielder(base_robot.BaseRobotRunner):
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
-class Attacker(base_robot.BaseRobotRunner):
-    def __init__(self, *args, **kwargs):
-        """init for Attacker robot"""
-        super(Attacker, self).__init__(*args, **kwargs)
-
-        self.executing = False
-
-        # set random goal position to shoot
-        self.goal = [-1.5+3*np.random.rand(), -7.5]
-        if self.color == 'Red':
-            self.goal[1] *= -1
-
-        # set passive position
-        self.passivePos = np.array([0, -0.2, np.pi/2])
-        if self.color == 'Red':
-            self.passivePos[1:] *= -1
-
-    def robotCode(self, ballEngine, obstacleConfs=None):
+    def attacker_robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for Attacker robot"""
         if not self.executing:
             self.p0 = ballEngine.getBallPose()
@@ -115,6 +95,11 @@ class Attacker(base_robot.BaseRobotRunner):
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
+    def dumb_robotCode(self):
+        """inner while loop for Dumb robot"""
+        vRobot = v2PosB(self.getRobotConf(self.bot), self.ballEngine.getBallPose(),30)
+        self.setMotorVelocities(vRobot[0], vRobot[1])
+
 # class Goalie(base_robot.BaseRobotRunner):
 #     def __init__(self, *args, **kwargs):
 #         """init for Goalie robot"""
@@ -127,27 +112,10 @@ class Attacker(base_robot.BaseRobotRunner):
 #         """inner while loop for Goalie robot"""
 #         self.keepGoal(self.getRobotConf(self.bot), self.goalposition)
 
-class Goalie(base_robot.BaseRobotRunner):
-    def __init__(self, goal_pos=0.72, *args, **kwargs):
-        """init for Goalie robot"""
-        super(Goalie, self).__init__(*args, **kwargs)
-        self.goal=goal_pos
-        if self.color == 'Red':
-            self.goal *= -1
-
-    def robotCode(self):
-        """inner while loop for Goalie robot"""
-        self.keepGoal2(self.getRobotConf(self.bot), self.goal)
-
 class Dumb(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         """init for Dumb robot"""
         super(Dumb, self).__init__(*args, **kwargs)
-
-    def robotCode(self):
-        """inner while loop for Dumb robot"""
-        vRobot = v2PosB(self.getRobotConf(self.bot), self.ballEngine.getBallPose(),30)
-        self.setMotorVelocities(vRobot[0], vRobot[1])
 
 class DumbMaster(base_robot.MultiRobotCyclicExecutor):
     def __init__(self, *args, **kwargs):
