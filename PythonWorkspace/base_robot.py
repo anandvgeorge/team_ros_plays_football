@@ -375,14 +375,14 @@ class BaseRobotRunner(object):
         for idx in range(self.path.shape[1]):
             # within the boundary
             if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
+                tol = 0.02
                 if self.color == 'Blue':
                     # Ex=0.18, Ey=0.07
                     # ylim = 0.705
-                    tol = 0.02
                     if np.abs(self.path[0,idx]) < (0.18 + tol) and np.abs(self.path[1,idx]) < (0.705 - (0.07+tol)):
                         pruned_path.append(self.path[:,idx])
                 else:
-                    elif np.abs(self.path[0,idx]) < (0.18 + tol) and self.path[1,idx] < (-0.705 + (0.07+tol)):
+                    if np.abs(self.path[0,idx]) < (0.18 + tol) and self.path[1,idx] < (-0.705 + (0.07+tol)):
                         pruned_path.append(self.path[:,idx])
 
         if (len(pruned_path)):
