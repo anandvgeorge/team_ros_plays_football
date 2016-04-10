@@ -165,24 +165,33 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             self.color = self.bots[0].color
             self.originalRoles = ['attacker', 'midfielder', 'goalie']
             self.roles = ['attacker', 'midfielder', 'goalie']
+            goalie = self.bots[2]
 
             activeidx = 0 # striker starts first
 
             t0 = time.time()
-            while time.time() - t0 < 180:
+            while time.time() - t0 < 600:
                 self.ballEngine.update()
+
+                print '1. Print:',
+                print self.roles,
+                print activeidx
 
                 assert activeidx != 2 # now only have active 0,1
                 activebot = self.bots[activeidx]
-                offense = self.roles[activeidx] == 'attacker'
+
+                offense = self.originalRoles[activeidx] == 'attacker'
                 if offense:
                     self.roles[1] = 'attacker'
                 else: 
                     self.roles[1] = 'midfielder'
 
+                print '2. Print:',
+                print self.roles
+
                 secondaryidx = not activeidx
 
-                for idx in range(len(self.bots)):
+                for idx in range(len(self.bots[:-1])):
                     if idx == secondaryidx:
                         if offense:
                             if self.ballEngine.getBallPose()[0] >= 0:
@@ -201,6 +210,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(activeidx),
                                 goaliePosition = self.findOppGoalieConf())
+                    
+                goalie.robotCode(
+                    role=self.roles[idx],
+                    obstacleConfs=self.getObstacleConfs(activeidx),
+                    goaliePosition = self.findOppGoalieConf())
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
@@ -248,7 +262,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     activebot.setMotorVelocities(0,0)
                     activeidx = not activeidx
 
-                #self.idash.plotframe()
+                self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys
