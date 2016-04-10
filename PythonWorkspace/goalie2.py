@@ -32,7 +32,7 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
         t = time.time()
         while time.time()-t<1000:
             robotConf = self.getRobotConf(self.bot)  
-            self.keepGoal(robotConf, y=0.7, goalLim=0.2)
+            self.keepGoal(robotConf, y=0.65, goalLim=0.2)
             time.sleep(0.01)  #s
         
         self.setMotorVelocities(0,0)

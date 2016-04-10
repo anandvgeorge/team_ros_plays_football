@@ -72,9 +72,16 @@ def v2Pos(robotConf, finalPos, v = 20, k=3.5, rb=0.03):
     # transformation to robot frame
     cos = math.cos(robotConf[2]) # robot orientation unique vector
     sin = math.sin(robotConf[2])
-    rvt = -cos*vx-sin*vy   # robot forward velocity
-    rvf = -sin*vx+cos*vy   # robot translational velocity ~~> ohmega
-    return (rvf, k*rvt)   # robot velocity (forward, transaltional)
+    rvt = -cos*vx-sin*vy   # robot translational velocity ~~> ohmega 
+    rvf = -sin*vx+cos*vy   # robot forward velocity
+    return [rvf, k*rvt]   # robot velocity (forward, transaltional)
+
+def v2PosB(robotConf, finalPos, v = 20, k=2, rb=0.03):
+    """v2pos with Backward implement"""
+    V=v2Pos(robotConf, finalPos, v, k, rb)
+    if V[0]<0:
+        V[1]=-V[1]
+    return V
 
 def v2orientation(robotConf, finalConf, v = 20, k=3.5, rb=0.05, kr=15):
     """ return a velocity vector to achieve the 
@@ -160,7 +167,7 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     path = np.concatenate((s, p, path), axis=1)
     return path, status
 
-def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04, hold=False):
+def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002, k=0.036, q_bias=0.04, hold=False, kick=False, vKick=30):
     """
     compute path and velocity for each node
     vmax is max velocity we want the robot to achieve for the point of motion
@@ -172,7 +179,10 @@ def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002,
 
     """
     d = ((finalBallPos[0]-ballPos[0])**2+(finalBallPos[1]-ballPos[1])**2)**0.5
-    vf = d/k
+    if kick:
+        vf=vKick
+    else:
+        vf = d/k
     q = q_bias+kq*vf
     theta = math.atan2(finalBallPos[1]-ballPos[1], finalBallPos[0]-ballPos[0])   # atan2(y, x)
     finalConf = (ballPos[0], ballPos[1], theta)
@@ -237,10 +247,10 @@ def obstacleDetector(obstacleConf, path,rb=0.025):
     #index = np.zeros(len(obstacleConfs),1)
     index = []
     distance = []
-    print len(path[0,:])
+    # print len(path[0,:])
     for i in range(len(path[0,:])):
         dis = math.sqrt((obstacleConf[0]-path[0,i])**2 + (obstacleConf[1]-path[1,i])**2)
-        print dis
+        # print dis
         if dis <= 2*rb: # TODO
             print "WARNING: Obstacle detected"
             index.append(i)
@@ -295,6 +305,17 @@ def test_avoidObstacle():
     time.sleep(10)
 
 #test_avoidObstacle()
+
+def force_repulsion(k_repulse, rho, rho_0):
+    """
+    k_repulse: positive scaling factor
+    rho: distance from point to obstacle
+    rho_0: distance of influence
+    """
+    if rho <= rho_0:
+        return k_repulse*(1.0/rho - 1.0/rho_0)*(1.0/rho**2)
+    else:
+        return 0
 
 class ThetaRange(object):
     """ Class to organize methods related to shifts and transformations of Theta or Angles """

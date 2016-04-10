@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt #used for image plotting
 import signal
 
 from idash import IDash
-from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime
+from robot_helpers import vomega2bytecodes, ThetaRange, v2Pos, passPath, calculatePathTime, v2PosB
 from plot_helpers import plotVector
 
 
@@ -24,45 +24,57 @@ class MyRobotRunner(base_robot.BaseRobotRunner):
 
     def robotCode(self):
         
+        
         np.set_printoptions(linewidth=np.inf)                       
 
+        cc=1
+        while cc:
+#            t=time.time()
+#            self.keepGoal2(self.getRobotConf())
+##            self.driveMotor(0, 0)
+#            print 'loop time'
+#            print t-time.time()
+#            time.sleep(0.01)
+            print self.getRobotConf()
         """ to measure the trajectory of the robot and ball during shoot
         need to be used with pass_axample.m matlab script"""
-        goal = [0.0, 0.0]
-        self.path, status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)        
-        dash = IDash(framerate=0.1)
-        dash.add(lambda: plt.plot(-self.path[1,:], self.path[0,:], 'b-*') and
-            plt.xlim([-0.7, 0.7]) and plt.ylim([-0.7, 0.7]))
-        dash.plotframe()       
-        print 'goal='
-        print goal
-        print 'path='  
-        print self.path  
-        pr = np.array([[],[]]) #np.array([[robotConf[0]],[robotConf[1]]])   # position of robot
-        pb = np.array([[],[]]) #np.array([[ballpos[0]],[ballpos[1]]])     # position of ball
-        peg = np.array([[],[]])     # position of estimated goal
-        timesave = []   # time
-        t = self.ballEngine.getSimTime()     # time in seconds
-        while (self.ballEngine.getSimTime()-t)<20: #End program after 30sec
-            remaining = self.ballEngine.getSimTime()-t
-            timesave.append(remaining)
-            robotConf = self.getRobotConf(self.bot)            
-            self.followPath(robotConf, rb=0.05) 
-            pr = np.concatenate((pr, np.array([[robotConf[0]],[robotConf[1]]])), axis=1)
-            ballpos = self.ballEngine.getBallPose()
-            pb = np.concatenate((pb, np.array([[ballpos[0]],[ballpos[1]]])), axis=1)
-            self.ballEngine.update()
-            ballpos = self.ballEngine.getNextRestPos()
-            peg = np.concatenate((peg, np.array([[ballpos[0]],[ballpos[1]]])), axis=1)
-            
-        self.setMotorVelocities(0,0)        
-
-        print 'robotPos='
-        print pr
-        print 'ballPos='  
-        print pb
-        print 'goalEstim='
-        print peg
+#        goal = [0.0, 0.0]
+#        self.path, status = passPath(self.getRobotConf(self.bot), self.ballEngine.getBallPose(), goal)        
+#        dash = IDash(framerate=0.1)
+#        dash.add(lambda: plt.plot(-self.path[1,:], self.path[0,:], 'b-*') and
+#            plt.xlim([-0.7, 0.7]) and plt.ylim([-0.7, 0.7]))
+#        dash.plotframe()       
+#        print 'goal='
+#        print goal
+#        print 'path='  
+#        print self.path  
+#        pr = np.array([[],[]]) #np.array([[robotConf[0]],[robotConf[1]]])   # position of robot
+#        pb = np.array([[],[]]) #np.array([[ballpos[0]],[ballpos[1]]])     # position of ball
+#        peg = np.array([[],[]])     # position of estimated goal
+#        timesave = []   # time
+#        t = self.ballEngine.getSimTime()     # time in seconds
+#        while (self.ballEngine.getSimTime()-t)<20: #End program after 30sec
+#            remaining = self.ballEngine.getSimTime()-t
+#            timesave.append(remaining)
+#            robotConf = self.getRobotConf(self.bot)            
+#            self.followPath(robotConf, rb=0.05) 
+#            pr = np.concatenate((pr, np.array([[robotConf[0]],[robotConf[1]]])), axis=1)
+#            ballpos = self.ballEngine.getBallPose()
+#            pb = np.concatenate((pb, np.array([[ballpos[0]],[ballpos[1]]])), axis=1)
+#            self.ballEngine.update()
+#            ballpos = self.ballEngine.getNextRestPos()
+#            print 'ball valocity'
+#            print self.ballEngine.getVeloctiy()
+#            peg = np.concatenate((peg, np.array([[ballpos[0]],[ballpos[1]]])), axis=1)
+#            
+#        self.setMotorVelocities(0,0)        
+#
+#        print 'robotPos='
+#        print pr
+#        print 'ballPos='  
+#        print pb
+#        print 'goalEstim='
+#        print peg
         
         """ to measure distance of the ball after shoot
             need to be used with ballModel.m matlab script"""

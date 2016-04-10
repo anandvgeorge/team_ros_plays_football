@@ -15,7 +15,7 @@ import threading
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
     interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize,
-    prox_sens_read)
+    prox_sens_read, force_repulsion, v2PosB)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -44,19 +44,19 @@ class BallEngine:
         self.pos = self.getBallPose()
         self.t =  time.time()
         self.T = 2.15   # time constant in [s]
-        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming)
+        vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_streaming )
 
     def getBallPose(self):
         _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.handle, -1, vrep.simx_opmode_buffer)
+            self.clientID, self.handle, -1, vrep.simx_opmode_buffer )
         x, y, z = xyz
         return [x, y]
 
-    def setBallPose(self, positionxy):
-        position = np.concatenate((np.asarray(positionxy), np.array([z])))
-        _ = vrep.simxSetObjectPosition(
-            self.clientID, self.handle, -1, position, vrep.simx_opmode_oneshot
-        )
+#    def setBallPose(self, positionxy):
+#        position = np.concatenate((np.asarray(positionxy), np.array([z])))
+#        _ = vrep.simxSetObjectPosition(
+#            self.clientID, self.handle, -1, position, vrep.simx_opmode_oneshot
+#        )
 
     def update(self):
         self.posm2 = self.posm1
@@ -66,20 +66,14 @@ class BallEngine:
         self.pos = self.getBallPose()
         self.t = time.time() # self.getSimTime()
 
+    def getDeltaPos(self):
+        """ returns the change in position, as a XY vector """
+        return np.array(self.pos) - np.array(self.posm1)
+
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
             model: d(t) = d0 + k0*(1-exp(-(t-t0)/T)), T = 2.15 [s]
         """
-#        print 'posm2'
-#        print self.posm2
-#        print 'posm1'
-#        print self.posm1
-#        print 'pos'
-#        print self.pos
-#        print 'tm2'
-#        print self.tm2
-#        print 't'
-#        print self.t
         tol = 0.0001
         norm = ((self.pos[0]-self.posm2[0])**2+(self.pos[1]-self.posm2[1])**2)**0.5
         if self.t-self.tm2<tol or math.fabs(norm/(self.t-self.tm2))<tol:
@@ -116,11 +110,20 @@ class BallEngine:
 #            t0 = self.T*math.log(cte)
         t0 = 0
         return k0, t0
-
+        
+    def getVelocity(self):
+        # return the velocity vector of the current ball position
+        dt=self.t-self.tm1
+        if (dt>0.00001): 
+            return ((self.pos[0]-self.posm1[0])/dt,(self.pos[1]-self.posm1[1])/dt)
+        dt=self.t-self.tm2
+        if (dt>0.00001):
+            return ((self.pos[0]-self.posm2[0])/dt,(self.pos[1]-self.posm2[1])/dt)
+        return (0,0)
+            
     def getSimTime(self):
         """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
-#        t = vrep.simxGetFloatingParameter (self.clientID, vrep.sim_floatparam_simulation_time_step, vrep.simx_opmode_oneshot)
         t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
         return t
 
@@ -129,7 +132,7 @@ class BallEngine:
 class BaseRobotRunner(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, color, number, clientID=None, ip='127.0.0.1'): # ip='127.0.0.1', '172.29.34.63'
+    def __init__(self, color, number, clientID=None, ip='127.0.0.1', port=19998): # ip='127.0.0.1', '172.29.34.63'
         """
         color: i.e. 'Blue'
         number: i.e. 1
@@ -138,6 +141,8 @@ class BaseRobotRunner(object):
         """
         # parameter init
         self.ip = ip
+        self.port=port
+        self.color = color
         self.bot_name = '%s%d' % (color, number)
         self.bot_nameStriker = 'Red1'
 
@@ -175,7 +180,7 @@ class BaseRobotRunner(object):
         num_tries = 10
         while count < num_tries:
             vrep.simxFinish(-1) # just in case, close all opened connections
-            self.clientID=vrep.simxStart(self.ip,19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            self.clientID=vrep.simxStart(self.ip,self.port,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
             if self.clientID!=-1:
                 print 'Connected to V-REP'
                 break
@@ -201,9 +206,9 @@ class BaseRobotRunner(object):
 
         # initialize odom of bot
         _, self.xyz = vrep.simxGetObjectPosition(
-            self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.bot, -1, vrep.simx_opmode_streaming )
         _, self.eulerAngles = vrep.simxGetObjectOrientation(
-            self.clientID, self.bot, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.bot, -1, vrep.simx_opmode_streaming )
 
         # FIXME: striker handles shouldn't be part of the default base class
         # FIXME: should be better way to have information regarding all the bots (Central Control?) (Publishers/Subscribers...)?
@@ -215,9 +220,9 @@ class BaseRobotRunner(object):
         _, self.botStriker = vrep.simxGetObjectHandle(
             self.clientID, self.bot_nameStriker, vrep.simx_opmode_oneshot_wait)
         _, xyzStriker = vrep.simxGetObjectPosition(
-            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming )
         _, eulerAnglesStriker = vrep.simxGetObjectOrientation(
-            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming)
+            self.clientID, self.botStriker, -1, vrep.simx_opmode_streaming )
 
     @abc.abstractmethod
     def robotCode(self):
@@ -228,9 +233,9 @@ class BaseRobotRunner(object):
         if robot_handle is None:
             robot_handle = self.bot
         _, xyz = vrep.simxGetObjectPosition(
-            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer )
         _, eulerAngles = vrep.simxGetObjectOrientation(
-            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+            self.clientID, robot_handle, -1, vrep.simx_opmode_buffer )
         x, y, z = xyz
         theta = eulerAngles[2]
 
@@ -260,10 +265,21 @@ class BaseRobotRunner(object):
 
     def setMotorVelocities(self, forward_vel, omega):
         ctrl_sig_left, ctrl_sig_right = vomega2bytecodes(forward_vel, omega, g=1)
+        self.driveMotor(ctrl_sig_left, ctrl_sig_right)
+
+    def driveMotor(self, vl, vr):
         _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.leftMotor,ctrl_sig_left,vrep.simx_opmode_oneshot_wait) # set left wheel velocity
+            self.clientID,self.leftMotor,vl,vrep.simx_opmode_streaming ) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
-            self.clientID,self.rightMotor,ctrl_sig_right,vrep.simx_opmode_oneshot_wait) # set right wheel velocity
+            self.clientID,self.rightMotor,vr,vrep.simx_opmode_streaming ) # set right wheel velocity
+        
+    def repulsion_vectors_compute(self, lidarValues, k_repulse=10.0):
+        numLidarValues = len(lidarValues)
+        lidarAngles = [np.pi / numLidarValues * index for index in range(numLidarValues)]
+
+        repulsionVectors = [np.array(pol2cart(force_repulsion(k_repulse, np.sqrt(val), 2), angle)) for val, angle in zip(lidarValues, lidarAngles)]
+
+        return repulsionVectors
 
     def followPath(self, robotConf, status=0, rb=0.05, dtheta=0.001, k=3.5):
         """ radius of the buffer zone
@@ -292,16 +308,20 @@ class BaseRobotRunner(object):
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
             
-    def keepGoal(self,robotConf, y=0.7, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
+    def keepGoal(self,robotConf, y=0.7,vmax=30, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
+        """ the robot keep the goal by staying on a line and focusing on ball displacement """
         tol=0.0001        
         self.ballEngine.update()  
         pm = self.ballEngine.posm2              # previous position
         p = self.ballEngine.getBallPose()       # position
         if math.fabs(p[1]-pm[1])<tol:       
             finalPos=[0,y]
-            vRobot = v2Pos(robotConf, finalPos)
+            vRobot = v2PosB(robotConf, finalPos)
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
+        if y*(p[1]-pm[1])<0:
+            self.setMotorVelocities(0, 0)
+            return 0
         a = (y-pm[1])/(p[1]-pm[1])  # intersection: (x,y)^t = pm+a(p-pm) 
         x = pm[0]+a*(p[0]-pm[0])  
         if (x>goalLim):
@@ -309,17 +329,20 @@ class BaseRobotRunner(object):
         if (x<-goalLim):
             x = -goalLim
         finalPos=[x,y]
-        print 'pm'
-        print pm
-        print 'p'
-        print p
-        print 'goalPos'
-        print finalPos
-        vRobot = v2Pos(robotConf, finalPos)
+        vRobot = v2PosB(robotConf, finalPos, vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])
         return 0
-        
 
+    def keepGoal2(self, robotConf, Gy=0.72, vmax=30, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
+        """ the robot keep the goal by staying on an ellipse and focusing on ball position 
+            configuration of the robot, princial axis of the ellipse, center of the goal """
+#        self.ballEngine.update()  
+        bp = self.ballEngine.getBallPose()  # ball position
+        a=math.atan2(bp[0],Gy-bp[1])
+        rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
+        vRobot = v2PosB(robotConf, rp, vmax)
+        self.setMotorVelocities(vRobot[0], vRobot[1])        
+        
     def add_to_path(self, path_objective):
         """ path objective is array-like, shape (3,-1) """
         path_objective = np.asarray(path_objective).reshape(3, -1)
@@ -348,13 +371,15 @@ class BaseRobotRunner(object):
             # within the boundary
             if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
                 pruned_path.append(self.path[:,idx])
-        self.path = np.column_stack(pruned_path)
+        if (len(pruned_path)):
+            self.path = np.column_stack(pruned_path)
+        else:
+            rc=self.getRobotConf()
+            self.path = np.array([[rc[0]],[rc[1]],[20]])
 
     def obstacleAwarePath(self, obstacleConf, rb = 0.025):
         robotPosition = self.getRobotConf()
-        print self.path.shape
         obstaclePath = interpolatePath(self.path, robotPosition)
-        print obstaclePath.shape
         index, distance = obstacleDetector(obstacleConf, obstaclePath, rb)
         self.path = avoidObstacle(obstaclePath, obstacleConf, index, distance, rb)
 
@@ -405,7 +430,7 @@ class BaseRobotRunner(object):
         if self.clientID!=-1:
             if not self.multirobots:
                 # Start simulation if MultiRobotRunner not already starting it
-                _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+                _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
             self.robotCode()
 
         if not self.multirobots:
@@ -435,9 +460,10 @@ class MultiRobotRunner(object):
     https://pymotw.com/2/threading/
     """
 
-    def __init__(self, ip='127.0.0.1'):
+    def __init__(self, ip='127.0.0.1', port=19999):
         # start vrep to obtain a self.clientID
         self.ip = ip
+        self.port = port
         self.initializeVrepClient()
         self.bots = []
         self.oppBots = []
@@ -450,7 +476,7 @@ class MultiRobotRunner(object):
         num_tries = 10
         while count < num_tries:
             vrep.simxFinish(-1) # just in case, close all opened connections
-            self.clientID=vrep.simxStart(self.ip,19999,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
+            self.clientID=vrep.simxStart(self.ip,self.port,True,True,5000,5) #Timeout=5000ms, Threadcycle=5ms
             if self.clientID!=-1:
                 print 'Connected to V-REP'
                 break
@@ -474,7 +500,7 @@ class MultiRobotRunner(object):
 
     def run(self):
         if self.clientID!=-1:
-            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
             # Create threads for each
             self.threads = []
             for bot in self.bots:
@@ -510,7 +536,7 @@ class MultiRobotCyclicExecutor(MultiRobotRunner):
         as a template.
         """
         if self.clientID!=-1:
-            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot_wait)
+            _ = vrep.simxStartSimulation(self.clientID,vrep.simx_opmode_oneshot)
             t0 = time.time()
             while True:
                 for bot in self.bots:

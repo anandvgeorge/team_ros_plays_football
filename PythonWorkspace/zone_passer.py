@@ -81,6 +81,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         # start ball at zone 4 - 1 (0 indexed)
         ball_start = self.zone_centers[:,3]
         ball_start[1] -= 0.05 # move closer to players center, but further distance q from player
+
         self.ballEngine.setBallPose(ball_start)
         self.ballEngine.update()
 
@@ -193,6 +194,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
             # set them up in the first 3 zones
             for idx in range(len(self.bots)):
                 if self.zone_pass_plan[idx] == 2:
+                # if False:
                     # zone 2 has some robots blocking, so navigate to zone 2
                     # in a couple of steps
                     # TOOD: may want to do this less hardcoded, more like planned path with obstacle avoidance
@@ -244,14 +246,14 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     next_rcvzone = None
 
 
-                def vizZones():
-                    zones = np.zeros(4)
-                    zones[activezone-1] = 0.5
-                    if rcvzone:
-                        zones[rcvzone-1] = 1.0
-                    plt.imshow(zones.reshape(2,2), interpolation='nearest')
-                    plt.title('Red = RCV, Green = Active')
-                self.idash.add(vizZones)
+                # def vizZones():
+                #     zones = np.zeros(4)
+                #     zones[activezone-1] = 0.5
+                #     if rcvzone:
+                #         zones[rcvzone-1] = 1.0
+                #     plt.imshow(zones.reshape(2,2), interpolation='nearest')
+                #     plt.title('Red = RCV, Green = Active')
+                # self.idash.add(vizZones)
 
                 # -- STATE MACHINE UPDATE PARAMETERS
                 if shoot_flag:
@@ -304,12 +306,17 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         # activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=10, vr=7, kq=0.0035, hold=True)
 
                         # fast mode (good luck!)
-                        activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=20, vr=15, kq=0.0010, hold=True)
+                        activebot.path, status = passPath(activeRobotConf, p0, finalBallPos, vmax=20, vr=15, kq=0.0010, hold=False)
+
+                        # avoid all friendly and opposing robots
                         obstacleConf = [self.oppBots[i].getRobotConf() for i in range(len(self.oppBots))]
                         obstacleConf.extend([self.bots[i].getRobotConf() for i in range(len(self.bots)) if i != activebot_idx])
                         for i in xrange(len(obstacleConf)):
-                            activebot.obstacleAwarePath(obstacleConf[i],0.05)
+                            activebot.obstacleAwarePath(obstacleConf[i],0.07)
+
+                        # avoid the wall boundaries
                         activebot.prunePath()
+
                         activebot.pause_before_kick = activebot.path.shape[1] > 2
                         p2 = self.ballEngine.getNextRestPos()
                         # FIXME: if the path produced is invalid, i.e some part of it is off the field and invalid
@@ -325,7 +332,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                             plt.plot(-rcvy, rcvx, 'r+')
                             plt.plot(-rcvbot.path[1,:], rcvbot.path[0,:], 'r.')
-                            plt.plot(-finalBallPos[1], finalBallPos[0], 'bo')
+                            plt.plot(-p0[1], p0[0], 'bo')
                             #plt.plot(-rcvp1[1], rcvp1[0], 'mx')
                             #plt.plot(-rcvp2[1], rcvp2[0], 'kx')
                             plt.xlim([-0.75, 0.75]) # y axis in the field
@@ -339,7 +346,21 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         first_loop = False
                     else:
                         print "Elapsed (MS): ", (time.time() - time_start) * 1e3
+
+                    # Edit the path based on the ball movement
+                    self.ballEngine.update()
+                    deltaxy = np.array(self.ballEngine.getVelocity())
+                    print "deltaxy: ", deltaxy
+                    for idx in range(activebot.path.shape[1]):
+                        gamma = 1 # no decay
+                        # gamma = 1 / idx # decay factor
+                        activebot.path[:2,-(idx+1)] += gamma*deltaxy*10
+
+                    # Follow the path
                     activebot.robotCode(rb=0.05, pause_before_kick=activebot.pause_before_kick)
+                    # activebot.robotCode(rb=0.05, pause_before_kick=False)
+
+                    # Do measurements, whether pass was successful and state changes
                     time_start = time.time()
                     p1 = self.ballEngine.getBallPose()
                     p3 = self.ballEngine.getNextRestPos()
@@ -348,11 +369,13 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
                     closest_zone = self.getClosestZone(p1)
                     if dist_from_start > 0.01: # the ball has been touched
-                         if velocity_measure < 0.003: # wait til velocity reaches zero
+                         # if velocity_measure < 0.003: # wait til velocity reaches zero
+                         if velocity_measure < 1.0: # start kicking while ball is moving...
                          # if dist_from_goal < 0.1: # wait til the ball has entered the predicted zone
                             executing = [False] * len(self.bots) # everyone has new roles, plan next pass
                             if closest_zone == rcvzone: # success
                                 # increment what is the new active zone
+                                activebot.setMotorVelocities(0,0)
                                 activezone_idx += 1
 
                 if bot_states[activebot_idx] == STATE_SHOOT:
@@ -374,7 +397,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     self.idash.add(vizShooting)
 
 
-                #self.idash.plotframe() # ~100 ms shaved by removing this line
+                self.idash.plotframe() # ~100 ms shaved by removing this line
                 # time.sleep(50*1e-3)
 
         self.clean_exit()
