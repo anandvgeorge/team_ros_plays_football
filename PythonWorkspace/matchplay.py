@@ -17,6 +17,11 @@ class MidFielder(base_robot.BaseRobotRunner):
         super(MidFielder, self).__init__(*args, **kwargs)
         self.executing = False
 
+        # set passive position
+        self.passivePos = [0, 0.2, -np.pi/2]
+        if self.color == 'Red':
+            self.passivePos[1:] *= -1
+
     def robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for each robots"""
         print("MidFielder")
@@ -38,9 +43,7 @@ class MidFielder(base_robot.BaseRobotRunner):
                 self.getRobotConf(self.bot), self.p0, self.passPos, kick=True)
 
             # avoid any obstacles
-            if obstacleConfs:
-                for conf in obstacleConfs:
-                    self.obstacleAwarePath(conf, 0.07)
+            self.multiObstacleAwarePath(obstacleConfs, 0.07)
 
             # avoid wall boundaries
             self.prunePath()
@@ -61,6 +64,11 @@ class Attacker(base_robot.BaseRobotRunner):
         if self.color == 'Red':
             self.goal[1] *= -1
 
+        # set passive position
+        self.passivePos = [0, -0.2, np.pi/2]
+        if self.color == 'Red':
+            self.passivePos[1:] *= -1
+
     def robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for Attacker robot"""
         print("Attacker")
@@ -70,10 +78,7 @@ class Attacker(base_robot.BaseRobotRunner):
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
-            # avoid any obstacles
-            if obstacleConfs:
-                for conf in obstacleConfs:
-                    self.obstacleAwarePath(conf, 0.07)
+            self.multiObstacleAwarePath(obstacleConfs, 0.07)
 
             self.executing = True
 
@@ -162,8 +167,14 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 self.ballEngine.update()
 
                 assert activezone != 2 # now only have active 0,1
+
                 activebot = self.bots[activezone]
                 activebot.robotCode(self.ballEngine)
+
+                passivezone = not activezone;
+                passivebot = self.bots[passivebot]
+                passivebot.
+
                 goalie.robotCode()
 
                 def vizBots():
@@ -200,7 +211,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             activebot.setMotorVelocities(0,0)
                             activezone = not activezone
 
-                #self.idash.plotframe()
+                # self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys

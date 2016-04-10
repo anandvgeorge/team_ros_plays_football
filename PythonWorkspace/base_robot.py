@@ -234,6 +234,21 @@ class BaseRobotRunner(object):
         """ OUR ROBOT CODE GOES HERE """
         return
 
+    def passiveCode(self, ballEngine, obstacleConfs=None):
+        """inner while loop for when attacker is not active"""
+        if not self.executing:
+            self.status = 0 # for moving freely, without theta adjust
+
+            self.path, self.status = smoothPath(
+                self.getRobotConf(self.bot),
+                self.passivePos,
+                r=0.01)
+
+            self.multiObstacleAwarePath(obstacleConfs, 0.07)
+            self.prunePath()
+
+        self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
+
     def getRobotConf(self, robot_handle=None):
         if robot_handle is None:
             robot_handle = self.bot
@@ -396,6 +411,11 @@ class BaseRobotRunner(object):
         obstaclePath = interpolatePath(self.path, robotPosition)
         index, distance = obstacleDetector(obstacleConf, obstaclePath, rb)
         self.path = avoidObstacle(obstaclePath, obstacleConf, index, distance, rb)
+
+    def multiObstacleAwarePath(self, obstacleConfs, rb):
+        if obstacleConfs:
+            for conf in obstacleConfs:
+                self.obstacleAwarePath(conf, 0.07)
 
     def receiveBall(self, proximitySensors, interceptVel = 17.5):
         robotPosition = self.getRobotConf()
