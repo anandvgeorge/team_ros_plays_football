@@ -243,7 +243,8 @@ class BaseRobotRunner(object):
                 self.getRobotConf(self.bot),
                 self.passivePos,
                 r=0.01)
-            v = 10*np.ones((1, np.size(self.path,1)))
+            vf = 10
+            v = vf*np.ones((1, np.size(self.path,1)))
             self.path = np.concatenate((self.path, v), axis=0)
             self.path[-1, -1]=vf
 
