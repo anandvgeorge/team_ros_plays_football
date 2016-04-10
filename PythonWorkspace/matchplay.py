@@ -14,9 +14,9 @@ class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         super(Player, self).__init__(*args, **kwargs)
         self.executing = False
-        self.conf2 = self.getRobotConf()
-        self.conf1 = self.conf2
-        self.conf0 = self.conf2
+        self.conf2 = np.array(self.getRobotConf())
+        self.conf1 = self.conf2 + np.random.randn(3)*0.1
+        self.conf0 = self.conf2 + np.random.randn(3)*0.1
 
         self.attackerInit()
         self.goalieInit()
