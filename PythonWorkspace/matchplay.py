@@ -188,6 +188,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 def vizBots():
                     actx, acty = activebot.getRobotConf()[:2]
+                    ballx, bally = self.ballEngine.getBallPose()
                     plt.hold('on')
                     try:
                         plt.plot(-self.activebot.passPos[1], self.activebot.passPos, 'ro')
@@ -198,6 +199,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         plt.plot(-activebot.target[1], activebot.target[0], 'm*')
                     except:
                         pass
+                    plt.plot(-bally,ballx, 'ro')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.8, 0.8]) # y axis in the field
                     plt.ylim([-0.7, 0.7]) # x axis in the field
