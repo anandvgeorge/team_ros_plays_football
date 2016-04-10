@@ -75,6 +75,7 @@ class Player(base_robot.BaseRobotRunner):
             self.path, self.status = passPath(
                 self.getRobotConf(self.bot), self.p0, self.passPos, kick=True)
 
+            self.prunePath()
             # avoid any obstacles
             self.multiObstacleAwarePath(obstacleConfs, 0.07)
 
@@ -94,6 +95,7 @@ class Player(base_robot.BaseRobotRunner):
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
+            self.prunePath()
             self.multiObstacleAwarePath(obstacleConfs, 0.07)
             self.prunePath()
 
