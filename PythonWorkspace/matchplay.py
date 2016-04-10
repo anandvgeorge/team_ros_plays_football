@@ -173,18 +173,18 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             while time.time() - t0 < 600:
                 self.ballEngine.update()
 
-                print '1. Print:',
-                print self.roles,
-                print activeidx
-
                 assert activeidx != 2 # now only have active 0,1
                 activebot = self.bots[activeidx]
 
                 offense = self.originalRoles[activeidx] == 'attacker'
+                print '1. Print:',
+                print self.roles,
+                print offense
                 if offense:
                     self.roles[1] = 'attacker'
                 else: 
                     self.roles[1] = 'midfielder'
+                    print 'FUCK YOU STUPID'
 
                 print '2. Print:',
                 print self.roles
@@ -192,27 +192,37 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 secondaryidx = not activeidx
 
                 for idx in range(len(self.bots[:-1])):
-                    if idx == secondaryidx:
-                        if offense:
+                    if offense:
+                        # secondary offender opperating on the positive x side
+                        if idx == secondaryidx:
                             if self.ballEngine.getBallPose()[0] >= 0:
                                 self.bots[idx].robotCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(activeidx),
                                 goaliePosition = self.findOppGoalieConf())
+                        # primary offender opperating on the negative x side        
                         else:
+                            if self.ballEngine.getBallPose()[0] < 0:
+                                self.bots[idx].robotCode(
+                                    role=self.roles[idx],
+                                    obstacleConfs=self.getObstacleConfs(activeidx),
+                                    goaliePosition = self.findOppGoalieConf())
+                    # defense 
+                    else:
+                        # secondary defender (original attacker being passive)
+                        if idx == secondaryidx:
                             self.bots[idx].secondaryCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(secondaryidx))
-
-                    else: # regular robotCode
-                        if self.ballEngine.getBallPose()[0] < 0:
+                        # primary defender (original defender being active)
+                        else: 
                             self.bots[idx].robotCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(activeidx),
                                 goaliePosition = self.findOppGoalieConf())
-                    
+
                 goalie.robotCode(
-                    role=self.roles[idx],
+                    role=self.roles[2],
                     obstacleConfs=self.getObstacleConfs(activeidx),
                     goaliePosition = self.findOppGoalieConf())
 
