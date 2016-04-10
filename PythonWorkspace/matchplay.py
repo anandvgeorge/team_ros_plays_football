@@ -84,7 +84,7 @@ class Player(base_robot.BaseRobotRunner):
 
             self.executing = True
 
-        self.followPath(self.getRobotConf(self.bot), 0, rb=0.05)
+        self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
     def attacker_robotCode(self, obstacleConfs, goaliePosition):
         """inner while loop for Attacker robot"""
@@ -101,7 +101,7 @@ class Player(base_robot.BaseRobotRunner):
 
             self.executing = True
 
-        self.followPath(self.getRobotConf(self.bot), 0, rb=0.05)
+        self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
     def dumb_robotCode(self, *args, **kwargs):
         """inner while loop for Dumb robot"""
