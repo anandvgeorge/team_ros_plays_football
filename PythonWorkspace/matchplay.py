@@ -191,15 +191,31 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 secondaryidx = not activeidx
 
+                # ballx, bally = self.ballEngine.getBallPose()
+                # robotX = np.zeros(2)
+                # robotY = np.zeros(2)
+                # robotX[0], robotY[0] = self.bots[0].getRobotConf()
+                # robotX[1], robotY[1] = self.bots[1].getRobotConf()
+                # distance2ball = 9999
+                # ballZone = True
+                # if ballX < 0:
+                #     ballZone = False
+                # for i in xrange(len(self.bots[:-1])):
+                #     dist = np.sqrt((ballx - robotX[i])**2 + (bally- robotY[i])**2)
+                #     if dist < distance2ball:
+                #         closestRobot = i
+
+                #secondaryidxHasPosX = closestRobot == secondaryidx 
                 for idx in range(len(self.bots[:-1])):
                     if offense:
+
                         # secondary offender opperating on the positive x side
                         if idx == secondaryidx:
                             if self.ballEngine.getBallPose()[0] >= 0:
                                 self.bots[idx].robotCode(
-                                role=self.roles[idx],
-                                obstacleConfs=self.getObstacleConfs(activeidx),
-                                goaliePosition = self.findOppGoalieConf())
+                                    role=self.roles[idx],
+                                    obstacleConfs=self.getObstacleConfs(activeidx),
+                                    goaliePosition = self.findOppGoalieConf())
                         # primary offender opperating on the negative x side        
                         else:
                             if self.ballEngine.getBallPose()[0] < 0:
@@ -247,8 +263,8 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                 self.idash.add(vizBots)
 
-                if time.time() - activebot.time_started_2b_dumb > 3:
-                    self.roles = self.originalRoles
+                # if time.time() - activebot.time_started_2b_dumb > 3:
+                #     self.roles = self.originalRoles
 
                 if activebot.path.shape[1] == 1:
                     pass
