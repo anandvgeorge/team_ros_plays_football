@@ -211,19 +211,39 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                         # secondary offender opperating on the positive x side
                         if idx == secondaryidx:
+                            # his side -- shoot!
                             if self.ballEngine.getBallPose()[0] >= 0:
                                 self.bots[idx].robotCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(activeidx),
                                     goaliePosition = self.findOppGoalieConf())
-                        # primary offender opperating on the negative x side        
+                            # not his side -- get into position
+                            else:
+                                if self.bots[idx].color == 'Red':
+                                    passivePos = [0.3, 0.2]
+                                else:
+                                    passivePos = [0.3, -0.2]
+                                self.bots[idx].secondaryCode(
+                                    role=self.roles[idx],
+                                    obstacleConfs=self.getObstacleConfs(secondaryidx),
+                                    passivePos=passivePos)
+                        # primary offender opperating on the negative x side
                         else:
                             if self.ballEngine.getBallPose()[0] < 0:
                                 self.bots[idx].robotCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(activeidx),
                                     goaliePosition = self.findOppGoalieConf())
-                    # defense 
+                            else:
+                                if self.bots[idx].color == 'Red':
+                                    passivePos = [-0.3, 0.2]
+                                else:
+                                    passivePos = [-0.3, -0.2]
+                                self.bots[idx].secondaryCode(
+                                    role=self.roles[idx],
+                                    obstacleConfs=self.getObstacleConfs(secondaryidx),
+                                    passivePos=passivePos)
+                    # defense
                     else:
                         # secondary defender (original attacker being passive)
                         if idx == secondaryidx:

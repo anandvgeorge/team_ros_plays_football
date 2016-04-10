@@ -234,16 +234,18 @@ class BaseRobotRunner(object):
         """ OUR ROBOT CODE GOES HERE """
         return
 
-    def secondaryCode(self, role, obstacleConfs=None):
+    def secondaryCode(self, role, obstacleConfs=None, passivePos=None):
         """inner while loop for when attacker is not active"""
         # FIXME: role does nothing, but maybe there should be different
         # modes of operation for passive roles
+        if passivePos is None:
+            passivePos = self.passivePos
         if not self.executing:
             self.status = 0 # for moving freely, without theta adjust
 
             self.path, self.status = smoothPath(
                 self.getRobotConf(self.bot),
-                self.passivePos,
+                passivePos,
                 r=0.01)
             vf = 10
             v = vf*np.ones((1, np.size(self.path,1)))
