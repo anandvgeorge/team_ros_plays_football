@@ -20,9 +20,9 @@ class Player(base_robot.BaseRobotRunner):
 
     def attackerInit(self):
         # set random goal position to shoot
-        self.goal = [-1.5+3*np.random.rand(), -7.5]
+        self.oppGoal = [-1.5+3*np.random.rand(), -7.5]
         if self.color == 'Red':
-            self.goal[1] *= -1
+            self.oppGoal[1] *= -1
 
         self.passivePos = np.array([0, -0.2, np.pi/2])
         if self.color == 'Red':
@@ -34,9 +34,9 @@ class Player(base_robot.BaseRobotRunner):
         #     self.passivePos[1:] *= -1
 
     def goalieInit(self):
-        self.goal=0.72 # FIXME: hardcoded bad!
+        self.ourGoal=0.72 # FIXME: hardcoded bad!
         if self.color == 'Red':
-            self.goal *= -1
+            self.ourGoal *= -1
 
     def robotCode(self, role, *args, **kwargs):
         if role == 'goalie':
@@ -50,7 +50,7 @@ class Player(base_robot.BaseRobotRunner):
 
     def goalie_robotCode(self, *args, **kwargs):
         """inner while loop for Goalie robot"""
-        self.keepGoal2(self.getRobotConf(self.bot), self.goal)
+        self.keepGoal2(self.getRobotConf(self.bot), self.ourGoal)
 
     def midfielder_robotCode(self, ballEngine, obstacleConfs=None):
         """inner while loop for each robots"""
@@ -85,7 +85,7 @@ class Player(base_robot.BaseRobotRunner):
         """inner while loop for Attacker robot"""
         if not self.executing:
             self.p0 = ballEngine.getBallPose()
-            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.goal, kick=True)
+            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.oppGoal, kick=True)
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
