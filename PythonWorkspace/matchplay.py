@@ -210,6 +210,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 if time.time() - activebot.time_started_2b_dumb > 3:
                     self.roles[activeidx] = self.originalRoles[activeidx]
 
+                print self.roles
                 # activebot.conf2 = activebot.conf1
                 # activebot.conf1 = activebot.conf0
                 # activebot.conf0 = activebot.getRobotConf()
@@ -238,7 +239,6 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             activeidx = not activeidx
 
                 self.idash.plotframe()
-                print self.roles
 
 if __name__ == '__main__':
     import sys
