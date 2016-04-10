@@ -12,7 +12,31 @@ from robot_helpers import (passPath, v2PosB)
 
 class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
-        pass
+        super(Player, self).__init__(*args, **kwargs)
+        self.executing = False
+
+        self.attackerInit()
+        self.goalieInit()
+
+    def attackerInit(self):
+        # set random goal position to shoot
+        self.goal = [-1.5+3*np.random.rand(), -7.5]
+        if self.color == 'Red':
+            self.goal[1] *= -1
+
+        self.passivePos = np.array([0, -0.2, np.pi/2])
+        if self.color == 'Red':
+            self.passivePos[1:] *= -1
+
+        # Came from midfielder
+        # self.passivePos = np.array([0, 0.1, -np.pi/2])
+        # if self.color == 'Red':
+        #     self.passivePos[1:] *= -1
+
+    def goalieInit(self):
+        self.goal=0.72 # FIXME: hardcoded bad!
+        if self.color == 'Red':
+            self.goal *= -1
 
     def robotCode(self, position, *args, **kwargs):
         if position == 'goalie'
@@ -163,6 +187,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
             # robots have been added
             self.color = self.bots[0].color
+            self.roles = ['attacker', 'midfielder', 'goalie']
             striker, middie, goalie = self.bots
 
             activezone = 0 # striker starts first
@@ -235,12 +260,12 @@ if __name__ == '__main__':
     bluemaster = Master(ip='172.23.201.40', port=port)
     # Order of which we addRobots kinda important...
     # self.bots -> Attacker, Midfielder, Goalie
-    bluemaster.addRobot(Attacker(color=color, number=1, clientID=bluemaster.clientID))
-    bluemaster.addRobot(MidFielder(color=color, number=2, clientID=bluemaster.clientID))
-    bluemaster.addRobot(Goalie(color=color, number=3, clientID=bluemaster.clientID))
+    bluemaster.addRobot(Player(color=color, number=1, clientID=bluemaster.clientID))
+    bluemaster.addRobot(Player(color=color, number=2, clientID=bluemaster.clientID))
+    bluemaster.addRobot(Player(color=color, number=3, clientID=bluemaster.clientID))
 
-    bluemaster.addOppRobot(Attacker(color=oppColor, number=1, clientID=bluemaster.clientID))
-    bluemaster.addOppRobot(MidFielder(color=oppColor, number=2, clientID=bluemaster.clientID))
-    bluemaster.addOppRobot(Goalie(color=oppColor, number=3, clientID=bluemaster.clientID))
+    bluemaster.addOppRobot(Player(color=oppColor, number=1, clientID=bluemaster.clientID))
+    bluemaster.addOppRobot(Player(color=oppColor, number=2, clientID=bluemaster.clientID))
+    bluemaster.addOppRobot(Player(color=oppColor, number=3, clientID=bluemaster.clientID))
 
     bluemaster.run()
