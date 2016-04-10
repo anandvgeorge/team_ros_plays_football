@@ -201,18 +201,13 @@ class FinalProjectProgram():
         x, y, z = xyz
         return (x, y)
         
-    def aim(self):
+    def aim(self, goaliePosition):
         # assuming: robot is already in perfect position
         # assuming: ball has velocity of zero
         ballRadius = 0.05
         leftGoalPost = [0.2, -0.75] # position of left goal post
-        rightGoalPost = [-0.2, 0.75]# position of right goal post
-        goaliePosition = [0,0]        
-        goaliePosition[0] = self.getRobotPose(self.botGoalie)[0]# Red3
-        goaliePosition[1] = self.getRobotPose(self.botGoalie)[1]
-        #goalieVelcoity = 
-        #goalieOrientation = 
-        tolerance = 0.05
+        rightGoalPost = [-0.2, 0.75]# position of right goal post       
+        tolerance = 0.01
         
 #        if goalieOrientation <= .. :
 #            goalieHeading =  # different variable name
@@ -225,11 +220,11 @@ class FinalProjectProgram():
         gapLeft = abs(goaliePosition[0] - leftGoalPost[0])
         
         if gapRight >= gapLeft:
-            aim = rightGoalPost[0] + ballRadius + tolerance
+            xAim = rightGoalPost[0] + ballRadius + tolerance
         else:
-            aim = leftGoalPost[0] - ballRadius - tolerance
+            xAim = leftGoalPost[0] - ballRadius - tolerance
         
-        return [aim, goaliePosition[1], z]
+        return [xAim, goaliePosition[1], z]
         
     def kickingPose(self, target):
         # CHANGE TO ACTUAL POSITION IF NOT TESTING
