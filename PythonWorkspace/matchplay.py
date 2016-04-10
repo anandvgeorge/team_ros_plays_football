@@ -79,17 +79,29 @@ class Attacker(base_robot.BaseRobotRunner):
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
 
+# class Goalie(base_robot.BaseRobotRunner):
+#     def __init__(self, *args, **kwargs):
+#         """init for Goalie robot"""
+#         super(Goalie, self).__init__(*args, **kwargs)
+#         self.goalposition = 0.65
+#         if self.color == 'Red':
+#             self.goalposition *= -1
+
+#     def robotCode(self, *args, **kwargs):
+#         """inner while loop for Goalie robot"""
+#         self.keepGoal(self.getRobotConf(self.bot), self.goalposition)
+
 class Goalie(base_robot.BaseRobotRunner):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, goal_pos=0.72, *args, **kwargs):
         """init for Goalie robot"""
         super(Goalie, self).__init__(*args, **kwargs)
-        self.goalposition = 0.65
+        self.goal=goal_pos
         if self.color == 'Red':
-            self.goalposition *= -1
+            self.goal *= -1
 
-    def robotCode(self, *args, **kwargs):
+    def robotCode(self):
         """inner while loop for Goalie robot"""
-        self.keepGoal(self.getRobotConf(self.bot), self.goalposition)
+        self.keepGoal2(self.getRobotConf(self.bot), self.goal)
 
 class Dumb(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
@@ -146,7 +158,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
             activezone = 0 # striker starts first
 
             t0 = time.time()
-            while time.time() - t0 < 30:
+            while time.time() - t0 < 180:
                 self.ballEngine.update()
 
                 assert activezone != 2 # now only have active 0,1
@@ -188,7 +200,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                             activebot.setMotorVelocities(0,0)
                             activezone = not activezone
 
-                self.idash.plotframe()
+                #self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys
@@ -203,7 +215,7 @@ if __name__ == '__main__':
     else:
         port=19999
 
-    bluemaster = Master(ip='127.0.0.1', port=port)
+    bluemaster = Master(ip='172.23.201.40', port=port)
     # Order of which we addRobots kinda important...
     # self.bots -> Attacker, Midfielder, Goalie
     bluemaster.addRobot(Attacker(color=color, number=1, clientID=bluemaster.clientID))

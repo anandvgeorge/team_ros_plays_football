@@ -102,7 +102,12 @@ class BallEngine:
 #            k0 = 0
 #        else:
 #            k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
-        k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
+        try:
+            k0 = (d1-d2*math.exp((t2-t1)/self.T))/(1-math.exp((t2-t1)/self.T))
+        except ZeroDivisionError:
+            print "Zero division error happened"
+            k0 = 0
+
 #        cte = (d2-d1)/(d2*math.exp(-t1/self.T)-d1*math.exp(-t2/self.T))
 #        if cte < tol:   # no solution for negativ numbers
 #            t0 = 0
@@ -370,7 +375,16 @@ class BaseRobotRunner(object):
         for idx in range(self.path.shape[1]):
             # within the boundary
             if np.abs(self.path[0,idx]) < xlim and np.abs(self.path[1,idx]) < ylim:
-                pruned_path.append(self.path[:,idx])
+                if self.color == 'Blue':
+                    # Ex=0.18, Ey=0.07
+                    # ylim = 0.705
+                    tol = 0.02
+                    if np.abs(self.path[0,idx]) < (0.18 + tol) and np.abs(self.path[1,idx]) < (0.705 - (0.07+tol)):
+                        pruned_path.append(self.path[:,idx])
+                else:
+                    elif np.abs(self.path[0,idx]) < (0.18 + tol) and self.path[1,idx] < (-0.705 + (0.07+tol)):
+                        pruned_path.append(self.path[:,idx])
+
         if (len(pruned_path)):
             self.path = np.column_stack(pruned_path)
         else:
