@@ -195,12 +195,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     except:
                         pass
                     plt.plot(-acty, actx, 'g+')
-                    plt.plot(-bally, ballx, 'ro')
                     try:
                         plt.plot(-activebot.target[1], activebot.target[0], 'm*')
                     except:
                         pass
-
+                    plt.plot(-bally,ballx, 'ro')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
                     plt.xlim([-0.8, 0.8]) # y axis in the field
                     plt.ylim([-0.7, 0.7]) # x axis in the field
