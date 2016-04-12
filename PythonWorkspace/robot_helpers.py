@@ -83,7 +83,7 @@ def v2PosB(robotConf, finalPos, v = 20, k=2, rb=0.03):
         V[1]=-V[1]
     return V
 
-def v2PosP(robotConf, finalPos, vmax=30, k=2, kp=400):
+def v2PosP(robotConf, finalPos, vmax=20, k=2, kp=400):
     """v2pos with P controller """
     x = finalPos[0] - robotConf[0]
     y = finalPos[1] - robotConf[1]
