@@ -74,10 +74,13 @@ class Player(base_robot.BaseRobotRunner):
         self.passPos = [random_x_mag*random_x_dir, random_y]
 
         if not self.executing:
+            self.ballEngine.update()
+            ballDeltaXY = np.array(self.ballEngine.getDeltaPos()).reshape((2,1))
             self.p0 = self.ballEngine.getBallPose()
             self.path, self.status = passPath(
                 self.getRobotConf(self.bot), self.p0, self.passPos, kick=False, vmax=15, vr=15, vKick=25)
 
+            self.path[:2, :] += np.tile(ballDeltaXY * 1.0, (1, self.path.shape[1])) # adjust path to ball velocity
             self.prunePath()
             # avoid any obstacles
             # if self.status != 2:
@@ -93,11 +96,14 @@ class Player(base_robot.BaseRobotRunner):
     def attacker_robotCode(self, obstacleConfs, goaliePosition):
         """inner while loop for Attacker robot"""
         if not self.executing:
+            self.ballEngine.update()
+            ballDeltaXY = np.array(self.ballEngine.getDeltaPos()).reshape((2,1))
             self.p0 = self.ballEngine.getBallPose()
             self.target = aim(goaliePosition,self.color)
             self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True, vmax=15, vr=15, vKick=25)
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
+            self.path[:2, :] += np.tile(ballDeltaXY * 1.0, (1, self.path.shape[1])) # adjust path to ball velocity
 
             self.prunePath()
             # if self.status != 2:

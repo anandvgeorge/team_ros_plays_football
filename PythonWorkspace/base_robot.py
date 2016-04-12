@@ -68,7 +68,7 @@ class BallEngine:
 
     def getDeltaPos(self):
         """ returns the change in position, as a XY vector """
-        return np.array(self.pos) - np.array(self.posm1)
+        return np.array(self.pos) - np.array(self.posm2)
 
     def getNextRestPos(self):
         """ return the next ball position at rest and the time to reach it,
@@ -129,7 +129,7 @@ class BallEngine:
     def getSimTime(self):
         """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
-#        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
+       # t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
         t=time.time()
         return t
 
