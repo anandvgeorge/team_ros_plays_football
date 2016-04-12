@@ -362,14 +362,14 @@ class BaseRobotRunner(object):
         self.setMotorVelocities(vRobot[0], vRobot[1])
         return 0
 
-    def keepGoal2(self, robotConf, Gy=0.72, vmax=30, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
+    def keepGoal2(self, robotConf, Gy=0.72, vmax=25, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
         """ the robot keep the goal by staying on an ellipse and focusing on ball position 
             configuration of the robot, princial axis of the ellipse, center of the goal """
 #        self.ballEngine.update()  
         bp = self.ballEngine.getBallPose()  # ball position
         a=math.atan2(bp[0],Gy-bp[1])
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
-        vRobot = v2PosB(robotConf, rp, 0.9*vmax)
+        vRobot = v2PosB(robotConf, rp, vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])            
         
     def add_to_path(self, path_objective):
