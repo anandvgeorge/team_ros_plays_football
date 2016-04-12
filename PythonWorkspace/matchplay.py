@@ -78,7 +78,8 @@ class Player(base_robot.BaseRobotRunner):
 
             self.prunePath()
             # avoid any obstacles
-            self.multiObstacleAwarePath(obstacleConfs, 0.05)
+            if self.status == 0:
+                self.multiObstacleAwarePath(obstacleConfs, 0.05)
 
             # avoid wall boundaries
             self.prunePath()
@@ -97,7 +98,8 @@ class Player(base_robot.BaseRobotRunner):
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
             self.prunePath()
-            self.multiObstacleAwarePath(obstacleConfs, 0.05)
+            if self.status == 0:
+                self.multiObstacleAwarePath(obstacleConfs, 0.05)
             self.prunePath()
 
             self.executing = True
@@ -271,11 +273,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                 self.idash.add(vizBots)
 
-                if time.time() - activebot.time_started_2b_dumb > 2:
-                    self.roles = self.originalRoles[:]
+                # if time.time() - activebot.time_started_2b_dumb > 2:
+                    # self.roles = self.originalRoles[:]
 
                 if activebot.path.shape[1] < 5:
-                    self.roles[activeidx] = 'dumb'
+                    # self.roles[activeidx] = 'dumb'
                     activebot.time_started_2b_dumb = time.time()
 
                 p0 = activebot.p0
