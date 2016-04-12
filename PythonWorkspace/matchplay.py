@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from idash import IDash
 from robot_helpers import (passPath, v2PosB, aim)
 
+
+
 class Player(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         super(Player, self).__init__(*args, **kwargs)
@@ -78,8 +80,8 @@ class Player(base_robot.BaseRobotRunner):
 
             self.prunePath()
             # avoid any obstacles
-            if self.status == 0:
-                self.multiObstacleAwarePath(obstacleConfs, 0.05)
+            # if self.status != 2:
+            self.multiObstacleAwarePath(obstacleConfs, 0.04)
 
             # avoid wall boundaries
             self.prunePath()
@@ -98,8 +100,8 @@ class Player(base_robot.BaseRobotRunner):
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
             self.prunePath()
-            if self.status == 0:
-                self.multiObstacleAwarePath(obstacleConfs, 0.05)
+            # if self.status != 2:
+            self.multiObstacleAwarePath(obstacleConfs, 0.04)
             self.prunePath()
 
             self.executing = True
