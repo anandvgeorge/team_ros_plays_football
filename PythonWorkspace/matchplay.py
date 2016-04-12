@@ -18,6 +18,7 @@ class Player(base_robot.BaseRobotRunner):
         self.conf1 = self.conf2 + np.random.randn(3)*0.1
         self.conf0 = self.conf2 + np.random.randn(3)*0.1
         self.time_started_2b_dumb = 0
+        self.p0 = self.ballEngine.getBallPose()
 
         self.attackerInit()
         self.goalieInit()
@@ -193,57 +194,41 @@ class Master(base_robot.MultiRobotCyclicExecutor):
 
                 secondaryidx = not activeidx
 
-                # ballx, bally = self.ballEngine.getBallPose()
-                # robotX = np.zeros(2)
-                # robotY = np.zeros(2)
-                # robotX[0], robotY[0] = self.bots[0].getRobotConf()
-                # robotX[1], robotY[1] = self.bots[1].getRobotConf()
-                # distance2ball = 9999
-                # ballZone = True
-                # if ballX < 0:
-                #     ballZone = False
-                # for i in xrange(len(self.bots[:-1])):
-                #     dist = np.sqrt((ballx - robotX[i])**2 + (bally- robotY[i])**2)
-                #     if dist < distance2ball:
-                #         closestRobot = i
-
+                ballx, bally = self.ballEngine.getBallPose()
+                robotX = np.zeros(2)
+                robotY = np.zeros(2)
+                robotX[0], robotY[0], _ = self.bots[0].getRobotConf()
+                robotX[1], robotY[1], _ = self.bots[1].getRobotConf()
+                distance2ball = 9999
+                for i in xrange(len(self.bots[:-1])):
+                    dist = np.sqrt((ballx - robotX[i])**2 + (bally- robotY[i])**2)
+                    if dist < distance2ball:
+                        distance2ball = dist
+                        closestRobot = i
+                print closestRobot
                 #secondaryidxHasPosX = closestRobot == secondaryidx 
                 for idx in range(len(self.bots[:-1])):
                     if offense:
-
-                        # secondary offender opperating on the positive x side
-                        if idx == secondaryidx:
-                            # his side -- shoot!
-                            if self.ballEngine.getBallPose()[0] >= 0:
-                                self.bots[idx].robotCode(
-                                    role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs(activeidx),
-                                    goaliePosition = self.findOppGoalieConf())
-                            # not his side -- get into position
-                            else:
-                                if self.bots[idx].color == 'Red':
-                                    passivePos = [0.2, 0.3, 0]
-                                else:
-                                    passivePos = [0.2, -0.3, 0]
-                                self.bots[idx].secondaryCode(
-                                    role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs(secondaryidx),
-                                    passivePos=passivePos)
-                        # primary offender opperating on the negative x side
-                        else:
-                            if self.ballEngine.getBallPose()[0] < 0:
-                                self.bots[idx].robotCode(
-                                    role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs(activeidx),
-                                    goaliePosition = self.findOppGoalieConf())
-                            else:
+                        if idx == closestRobot:
+                            self.bots[idx].robotCode(
+                                role=self.roles[idx],
+                                obstacleConfs=self.getObstacleConfs(idx),
+                                goaliePosition = self.findOppGoalieConf())
+                        else: # robot is not closest robot
+                            ballPosX = self.ballEngine.getBallPose()[0]
+                            if ballPosX >= 0:
                                 if self.bots[idx].color == 'Red':
                                     passivePos = [-0.2, 0.3, 0]
-                                else:
+                                else: # Blue
                                     passivePos = [-0.2, -0.3, 0]
-                                self.bots[idx].secondaryCode(
+                            else: # ballPosX < 0
+                                if self.bots[idx].color == 'Red':
+                                    passivePos = [0.2, 0.3, 0]
+                                else: # Blue
+                                    passivePos = [0.2, -0.3, 0]
+                            self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs(secondaryidx),
+                                    obstacleConfs=self.getObstacleConfs(idx),
                                     passivePos=passivePos)
                     # defense
                     else:
