@@ -249,14 +249,14 @@ class BaseRobotRunner(object):
             self.path, self.status = smoothPath(
                 self.getRobotConf(self.bot),
                 passivePos,
-                r=0.01)
+                r=0.08)
             vf = 10
             v = vf*np.ones((1, np.size(self.path,1)))
             self.path = np.concatenate((self.path, v), axis=0)
             self.path[-1, -1]=vf
 
             self.prunePath()
-            self.multiObstacleAwarePath(obstacleConfs, 0.07)
+            self.multiObstacleAwarePath(obstacleConfs, 0.04)
             self.prunePath()
 
         self.followPath(self.getRobotConf(self.bot), self.status, rb=0.05)
