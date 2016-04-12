@@ -429,7 +429,8 @@ class BaseRobotRunner(object):
         ylim: number
             the magnitude of the bounds of the field in the y direction
         """
-        tol = 0.015
+        
+        tol = 0.0125
         for idx in range(self.path.shape[1]):
             exceededX = np.abs(self.path[0,idx]) > xlim
             exceededY = np.abs(self.path[1,idx]) > ylim

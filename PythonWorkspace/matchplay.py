@@ -1,6 +1,5 @@
 """matchplay.py
-play ball!
-TODO: say this same phrase in a football context, in the german language haha.
+ANSTOSS!!!!
 """
 import vrep
 import base_robot
@@ -63,6 +62,7 @@ class Player(base_robot.BaseRobotRunner):
         """inner while loop for each robots"""
         # pass randomly now
         # TODO: pass where less people are
+
 
         # random place along field width, in zone 0
         random_x_mag = np.random.rand()*0.455/2
@@ -170,7 +170,6 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 activebot = self.bots[activeidx]
 
                 offense = self.originalRoles[activeidx] == 'attacker'
-                print self.roles
                 if offense:
                     if self.roles[1] != 'dumb':
                         self.roles[1] = 'attacker'

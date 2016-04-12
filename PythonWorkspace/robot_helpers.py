@@ -271,6 +271,10 @@ def obstacleDetector(obstacleConf, path,rb=0.025):
 def avoidObstacle(path,obstacleConf,index,distance,rb=0.025):
     #rb = 0.025 #TODO
     minimalDistance = 2*rb #TODO
+    xlim=0.455
+    ylim=0.705
+    exceeded = False
+    gammaExceeded = []
     for i in range(len(index)):
         delta = 0
         if (path[0,index[i]] == obstacleConf[0]) and (path[1,index[i]] == obstacleConf[1]):
@@ -279,21 +283,44 @@ def avoidObstacle(path,obstacleConf,index,distance,rb=0.025):
         gamma = math.acos((minimalDistance**2 + distance[i]**2 - c**2)/(2*minimalDistance*distance[i]))
         if path[1,index[i]] < obstacleConf[1]:
             gamma = -gamma
+        gammaExceeded.append(gamma)
         #deltaX, deltaY = ThetaRange.pol2cart(minimalDistance,gamma)
         deltaX = minimalDistance * math.cos(gamma)
         deltaY = minimalDistance * math.sin(gamma)
         path[0,index[i]] = deltaX + obstacleConf[0]
         path[1,index[i]] = deltaY + obstacleConf[1]
+        exceededX = np.abs(path[0,index[i]]) > xlim
+        exceededY = np.abs(path[1,index[i]]) > ylim
+        if exceededX or exceededY:
+            exceeded = True
+    try:
+        if exceeded == True:
+            print 'EXCEEDED'
+            flippedPath = np.zeros((3,len(index)))
+            print len(index)
+            print index[0]
+            print index[-1]+1
+            for i in range(len(index)):
+                deltaX = minimalDistance * math.cos(gammaExceeded[i] + math.pi)
+                deltaY = minimalDistance * math.sin(gammaExceeded[i] + math.pi)
+                flippedPath[0,i] = deltaX + obstacleConf[0]
+                flippedPath[1,i] = deltaY + obstacleConf[1]
+                flippedPath[2,i] = path[2,i]
+            flippedPath = flippedPath[:,::-1]
+            path[:,index[0]:index[-1]+1] = flippedPath
+    except Exception,e:
+        print e
+        pass
     return path
 
 def test_avoidObstacle():
     vector = np.zeros((3,2))
-    vector[:,1] = [-0.5,0.5,0]
-    robotPosition = (1,1)
+    vector[:,1] = [0.2,0.7,0]
+    robotPosition = (0,0.70)
     path = interpolatePath(vector,robotPosition)
     pathOld = path.copy()
     print path
-    obstacleConf = (0.45,0.4)
+    obstacleConf = (0.1,0.68)
     index, distance = obstacleDetector(obstacleConf,path)
     pathNew =  avoidObstacle(path,obstacleConf,index,distance)
     phi = np.linspace(0, 2*np.pi, 18, endpoint=True)
