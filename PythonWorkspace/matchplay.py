@@ -191,7 +191,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     if dist < distance2ball:
                         distance2ball = dist
                         closestRobot = i
-
+                ballPosX, ballPosY = self.ballEngine.getBallPose()
                 for idx in range(len(self.bots[:-1])):
                     if offense:
                         if idx == closestRobot:
@@ -200,17 +200,10 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                                 obstacleConfs=self.getObstacleConfs(idx),
                                 goaliePosition = self.findOppGoalieConf())
                         else: # robot is not closest robot
-                            ballPosX = self.ballEngine.getBallPose()[0]
                             if ballPosX >= 0:
-                                if self.bots[idx].color == 'Red':
-                                    passivePos = [-0.2, 0.3, 0]
-                                else: # Blue
-                                    passivePos = [-0.2, -0.3, 0]
+                                    passivePos = [-0.2, ballPosY, 0]
                             else: # ballPosX < 0
-                                if self.bots[idx].color == 'Red':
-                                    passivePos = [0.2, 0.3, 0]
-                                else: # Blue
-                                    passivePos = [0.2, -0.3, 0]
+                                    passivePos = [0.2, ballPosY, 0]
                             self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(idx),
@@ -219,9 +212,14 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     else:
                         # secondary defender (original attacker being passive)
                         if idx == secondaryidx:
+                            if self.bots[idx].color == 'Red':
+                                passivePos = [ballPosX, 0.2, 0]
+                            else: 
+                                passivePos = [ballPosX, -0.2, 0]
                             self.bots[idx].secondaryCode(
                                 role=self.roles[idx],
-                                obstacleConfs=self.getObstacleConfs(secondaryidx))
+                                obstacleConfs=self.getObstacleConfs(secondaryidx),
+                                passivePos=passivePos)
                         # primary defender (original defender being active)
                         else: 
                             self.bots[idx].robotCode(
