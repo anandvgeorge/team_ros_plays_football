@@ -385,7 +385,7 @@ class BaseRobotRunner(object):
         self.setMotorVelocities(vRobot[0], vRobot[1])
         time.sleep(0.001)
 
-    def v2PosA(self, robotConf, finalPos, vmax=40, k=2, kp=400, amax=100):
+    def v2PosA(self, robotConf, finalPos, vmax=40, k=2, kp=200, amax=100):
         """v2pos with acceleration bounded """
         x = finalPos[0] - robotConf[0]
         y = finalPos[1] - robotConf[1]
@@ -428,8 +428,15 @@ class BaseRobotRunner(object):
         ylim: number
             the magnitude of the bounds of the field in the y direction
         """
-        
+        xGoal = 0.18
+        yGoal = 0.07
         tol = 0.0125
+        tol2 =  0.025
+        Ex = 0.18 + tol2
+        Ey = 0.07 + tol2
+        Gy = 0.72
+        if self.color == 'Red':
+            Gy *= -1
         for idx in range(self.path.shape[1]):
             exceededX = np.abs(self.path[0,idx]) > xlim
             exceededY = np.abs(self.path[1,idx]) > ylim
@@ -444,6 +451,13 @@ class BaseRobotRunner(object):
                     self.path[1,idx] = ylim - tol
                 else:
                     self.path[1,idx] = - (ylim - tol)
+            insideEllipsis = (self.path[0,idx])**2/Ex**2 + (self.path[1,idx] - Gy)**2/Ey**2 <= 1
+            if insideEllipsis:
+                theta = math.atan2(-self.path[1,idx] + Gy, self.path[0,idx])
+                xNew = Ex*math.cos(theta)
+                yNew = -Ey*math.sin(theta) + Gy
+                self.path[0,idx] = xNew
+                self.path[1,idx] = yNew
 
     def obstacleAwarePath(self, obstacleConf, rb = 0.025):
         robotPosition = self.getRobotConf()

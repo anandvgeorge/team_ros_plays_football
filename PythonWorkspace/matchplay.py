@@ -210,7 +210,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                                     passivePos = [0.2, ballPosY, 0]
                             self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # attack the goalie
+                                    obstacleConfs=self.getObstacleConfs([idx]), # attack the goalie
                                     passivePos=passivePos)
                     # defense
                     else:
@@ -260,11 +260,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 self.idash.add(vizBots)
 
                 # if time.time() - activebot.time_started_2b_dumb > 2:
-                    # self.roles = self.originalRoles[:]
+                #     self.roles = self.originalRoles[:]
 
-                if activebot.path.shape[1] < 5:
-                    # self.roles[activeidx] = 'dumb'
-                    activebot.time_started_2b_dumb = time.time()
+                # if activebot.path.shape[1] < 5:
+                #     self.roles[activeidx] = 'dumb'
+                #     activebot.time_started_2b_dumb = time.time()
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
@@ -283,7 +283,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         # self.setMotorVelocities(0, 0)
                         activeidx = not activeidx
 
-                self.idash.plotframe()
+                # self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys
