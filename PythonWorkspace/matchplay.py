@@ -57,7 +57,7 @@ class Player(base_robot.BaseRobotRunner):
 
     def goalie_robotCode(self, *args, **kwargs):
         """inner while loop for Goalie robot"""
-        self.keepGoal2(self.getRobotConf(self.bot), self.ourGoal)
+        self.keepGoalP(self.getRobotConf(self.bot), self.ourGoal)
 
     def midfielder_robotCode(self, obstacleConfs, goaliePosition):
         """inner while loop for each robots"""
