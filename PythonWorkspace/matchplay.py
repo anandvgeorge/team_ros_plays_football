@@ -76,7 +76,7 @@ class Player(base_robot.BaseRobotRunner):
         if not self.executing:
             self.p0 = self.ballEngine.getBallPose()
             self.path, self.status = passPath(
-                self.getRobotConf(self.bot), self.p0, self.passPos, kick=False, vmax=20, vr=20)
+                self.getRobotConf(self.bot), self.p0, self.passPos, kick=False, vmax=15, vr=15, vKick=25)
 
             self.prunePath()
             # avoid any obstacles
@@ -95,7 +95,7 @@ class Player(base_robot.BaseRobotRunner):
         if not self.executing:
             self.p0 = self.ballEngine.getBallPose()
             self.target = aim(goaliePosition,self.color)
-            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True, vmax=20, vr=20)
+            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True, vmax=15, vr=15, vKick=25)
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
@@ -193,19 +193,24 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 ballPosX, ballPosY = self.ballEngine.getBallPose()
                 for idx in range(len(self.bots[:-1])):
                     if offense:
+                        oppGoalieConf, oppGoalieIdx = self.findOppGoalieConf(return_index=True)
+                        oppGoalieIdx = self.convertOppBotsIdx2BotsIdx(oppGoalieIdx)
                         if idx == closestRobot:
                             self.bots[idx].robotCode(
                                 role=self.roles[idx],
-                                obstacleConfs=self.getObstacleConfs(idx),
+                                obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # dont ignore yourself, or the oppGoalie
                                 goaliePosition = self.findOppGoalieConf())
                         else: # robot is not closest robot
-                            if ballPosX >= 0:
+                            if True: # be a bitch
+                                passivePos = oppGoalieConf
+                            else:
+                                if ballPosX >= 0:
                                     passivePos = [-0.2, ballPosY, 0]
-                            else: # ballPosX < 0
+                                else: # ballPosX < 0
                                     passivePos = [0.2, ballPosY, 0]
                             self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs(idx),
+                                    obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # attack the goalie
                                     passivePos=passivePos)
                     # defense
                     else:
@@ -213,14 +218,14 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         if idx == secondaryidx:
                             if self.bots[idx].color == 'Red':
                                 passivePos = [ballPosX, 0.2, 0]
-                            else: 
+                            else:
                                 passivePos = [ballPosX, -0.2, 0]
                             self.bots[idx].secondaryCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(secondaryidx),
                                 passivePos=passivePos)
                         # primary defender (original defender being active)
-                        else: 
+                        else:
                             self.bots[idx].robotCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(activeidx),
@@ -244,6 +249,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         plt.plot(-activebot.target[1], activebot.target[0], 'm*')
                     except:
                         pass
+                    plt.plot(-oppGoalieConf[1], oppGoalieConf[0], 'yo')
                     plt.plot(-bally,ballx, 'ro')
                     plt.plot(-self.bots[secondaryidx].path[1,:], self.bots[secondaryidx].path[0,:], 'b.')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
@@ -266,16 +272,16 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 dist_from_start = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
                 velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
                 closest_zone = self.getClosestZone(p1)
-                # if dist_from_start > 0.01: # the ball has been touched
+                if dist_from_start > 0.01: # the ball has been touched
                 #     if velocity_measure < 0.003: # wait til velocity reaches zero
                 # if True:
                     # if velocity_measure < 1.0: # start kicking while ball is moving...
-                for bot in self.bots:
-                    bot.executing = False
-                if closest_zone != activeidx: # success
-                    # increment what is the new active zone
-                    activebot.setMotorVelocities(0,0)
-                    activeidx = not activeidx
+                    for bot in self.bots:
+                        bot.executing = False
+                    if closest_zone != activeidx: # success
+                        # increment what is the new active zone
+                        # self.setMotorVelocities(0, 0)
+                        activeidx = not activeidx
 
                 self.idash.plotframe()
 
@@ -302,7 +308,7 @@ if __name__ == '__main__':
     bluemaster.addRobot(Player(color=color, number=1, clientID=bluemaster.clientID))
     bluemaster.addRobot(Player(color=color, number=2, clientID=bluemaster.clientID))
     bluemaster.addRobot(Player(color=color, number=3, clientID=bluemaster.clientID))
-
+    # MUST addOppRobots after, the list order depends on it...
     bluemaster.addOppRobot(Player(color=oppColor, number=1, clientID=bluemaster.clientID))
     bluemaster.addOppRobot(Player(color=oppColor, number=2, clientID=bluemaster.clientID))
     bluemaster.addOppRobot(Player(color=oppColor, number=3, clientID=bluemaster.clientID))
