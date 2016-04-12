@@ -570,7 +570,7 @@ class MultiRobotRunner(object):
     def addOppRobot(self, instance):
         self.oppBots.append(instance)
 
-    def findOppGoalieConf(self):
+    def findOppGoalieConf(self, return_index=False):
         if self.oppBots[0].color == 'Red':
             oppGoalCenter = (0, 0.75)
         else:
@@ -584,19 +584,28 @@ class MultiRobotRunner(object):
                 distance2Goal = distance
                 index = i
         oppGoalieHandle = self.oppBots[index].bot
-        return self.oppBots[index].getRobotConf()
+        if return_index:
+            return self.oppBots[index].getRobotConf(), index
+        else:
+            return self.oppBots[index].getRobotConf()
 
-    def getObstacleConfs(self, myself):
+    def convertOppBotsIdx2BotsIdx(self, oppBotIdx):
+        n_bots = len(self.bots)
+        return n_bots + oppBotIdx
+
+    def getObstacleConfs(self, idxs2ignore):
         """
         Parameters
         ----------
-        myself: index of yourself, so we can ignore it
-            0 for striker, 1 for midfielder
+        idxs2ignore: int or list of idxs to ignore
+            for 6 person on field, can be indexes 0 - 5
         """
+        if isinstance(idxs2ignore, int):
+            idxs2ignore = [idxs2ignore] # if int is passed, put it into an array
         obstacleConfs = [self.oppBots[i].getRobotConf() for i in range(len(self.oppBots))]
         # FIXME: includes the own bot; untested
         # TODO: maybe include ballConf, if you dont want to hit it
-        obstacleConfs.extend([self.bots[i].getRobotConf() for i in range(len(self.bots)) if myself != i])
+        obstacleConfs.extend([self.bots[i].getRobotConf() for i in range(len(self.bots)) if i in idxs2ignore])
         return obstacleConfs
 
     def run(self):

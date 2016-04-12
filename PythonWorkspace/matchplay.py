@@ -194,15 +194,17 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 for idx in range(len(self.bots[:-1])):
                     if offense:
                         if idx == closestRobot:
+                            _, oppGoalieIdx = self.findOppGoalieConf(return_index=True)
+                            oppGoalieIdx = self.convertOppBotsIdx2BotsIdx(oppGoalieIdx)
                             self.bots[idx].robotCode(
                                 role=self.roles[idx],
-                                obstacleConfs=self.getObstacleConfs(idx),
+                                obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # dont ignore yourself, or the oppGoalie
                                 goaliePosition = self.findOppGoalieConf())
                         else: # robot is not closest robot
                             if ballPosX >= 0:
-                                    passivePos = [-0.2, ballPosY, 0]
+                                passivePos = [-0.2, ballPosY, 0]
                             else: # ballPosX < 0
-                                    passivePos = [0.2, ballPosY, 0]
+                                passivePos = [0.2, ballPosY, 0]
                             self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
                                     obstacleConfs=self.getObstacleConfs(idx),
@@ -302,7 +304,7 @@ if __name__ == '__main__':
     bluemaster.addRobot(Player(color=color, number=1, clientID=bluemaster.clientID))
     bluemaster.addRobot(Player(color=color, number=2, clientID=bluemaster.clientID))
     bluemaster.addRobot(Player(color=color, number=3, clientID=bluemaster.clientID))
-
+    # MUST addOppRobots after, the list order depends on it...
     bluemaster.addOppRobot(Player(color=oppColor, number=1, clientID=bluemaster.clientID))
     bluemaster.addOppRobot(Player(color=oppColor, number=2, clientID=bluemaster.clientID))
     bluemaster.addOppRobot(Player(color=oppColor, number=3, clientID=bluemaster.clientID))
