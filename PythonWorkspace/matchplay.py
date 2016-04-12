@@ -76,7 +76,7 @@ class Player(base_robot.BaseRobotRunner):
         if not self.executing:
             self.p0 = self.ballEngine.getBallPose()
             self.path, self.status = passPath(
-                self.getRobotConf(self.bot), self.p0, self.passPos, kick=False, vmax=15, vr=15)
+                self.getRobotConf(self.bot), self.p0, self.passPos, kick=False, vmax=15, vr=15, vKick=25)
 
             self.prunePath()
             # avoid any obstacles
@@ -95,7 +95,7 @@ class Player(base_robot.BaseRobotRunner):
         if not self.executing:
             self.p0 = self.ballEngine.getBallPose()
             self.target = aim(goaliePosition,self.color)
-            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True, vmax=15, vr=15)
+            self.path, self.status = passPath(self.getRobotConf(self.bot), self.p0, self.target, kick=True, vmax=15, vr=15, vKick=25)
 
             # self.path[2,:] *= (0.75 - np.random.randn()*0.25) # varied velocity
 
@@ -193,21 +193,24 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 ballPosX, ballPosY = self.ballEngine.getBallPose()
                 for idx in range(len(self.bots[:-1])):
                     if offense:
+                        oppGoalieConf, oppGoalieIdx = self.findOppGoalieConf(return_index=True)
+                        oppGoalieIdx = self.convertOppBotsIdx2BotsIdx(oppGoalieIdx)
                         if idx == closestRobot:
-                            _, oppGoalieIdx = self.findOppGoalieConf(return_index=True)
-                            oppGoalieIdx = self.convertOppBotsIdx2BotsIdx(oppGoalieIdx)
                             self.bots[idx].robotCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # dont ignore yourself, or the oppGoalie
                                 goaliePosition = self.findOppGoalieConf())
                         else: # robot is not closest robot
-                            if ballPosX >= 0:
-                                passivePos = [-0.2, ballPosY, 0]
-                            else: # ballPosX < 0
-                                passivePos = [0.2, ballPosY, 0]
+                            if True: # be a bitch
+                                passivePos = oppGoalieConf
+                            else:
+                                if ballPosX >= 0:
+                                    passivePos = [-0.2, ballPosY, 0]
+                                else: # ballPosX < 0
+                                    passivePos = [0.2, ballPosY, 0]
                             self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs(idx),
+                                    obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # attack the goalie
                                     passivePos=passivePos)
                     # defense
                     else:
@@ -246,6 +249,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         plt.plot(-activebot.target[1], activebot.target[0], 'm*')
                     except:
                         pass
+                    plt.plot(-oppGoalieConf[1], oppGoalieConf[0], 'yo')
                     plt.plot(-bally,ballx, 'ro')
                     plt.plot(-self.bots[secondaryidx].path[1,:], self.bots[secondaryidx].path[0,:], 'b.')
                     plt.plot(-activebot.path[1,:], activebot.path[0,:], 'g.')
@@ -279,7 +283,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         # self.setMotorVelocities(0, 0)
                         activeidx = not activeidx
 
-                # self.idash.plotframe()
+                self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys

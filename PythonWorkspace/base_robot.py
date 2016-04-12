@@ -572,9 +572,9 @@ class MultiRobotRunner(object):
 
     def findOppGoalieConf(self, return_index=False):
         if self.oppBots[0].color == 'Red':
-            oppGoalCenter = (0, 0.75)
-        else:
             oppGoalCenter = (0, -0.75)
+        else:
+            oppGoalCenter = (0, 0.75)
         distance2Goal = 9999
         index = 0
         for i in xrange(len(self.oppBots)):
