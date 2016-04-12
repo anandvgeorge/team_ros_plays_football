@@ -1,6 +1,5 @@
 """matchplay.py
-play ball!
-TODO: say this same phrase in a football context, in the german language haha.
+ANSTOSS!!!!
 """
 import vrep
 import base_robot
@@ -63,6 +62,7 @@ class Player(base_robot.BaseRobotRunner):
         """inner while loop for each robots"""
         # pass randomly now
         # TODO: pass where less people are
+
 
         # random place along field width, in zone 0
         random_x_mag = np.random.rand()*0.455/2
@@ -216,7 +216,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                                     passivePos = [0.2, ballPosY, 0]
                             self.bots[idx].secondaryCode(
                                     role=self.roles[idx],
-                                    obstacleConfs=self.getObstacleConfs([idx, oppGoalieIdx]), # attack the goalie
+                                    obstacleConfs=self.getObstacleConfs([idx]), # attack the goalie
                                     passivePos=passivePos)
                     # defense
                     else:
@@ -266,11 +266,11 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 self.idash.add(vizBots)
 
                 # if time.time() - activebot.time_started_2b_dumb > 2:
-                    # self.roles = self.originalRoles[:]
+                #     self.roles = self.originalRoles[:]
 
-                if activebot.path.shape[1] < 5:
-                    # self.roles[activeidx] = 'dumb'
-                    activebot.time_started_2b_dumb = time.time()
+                # if activebot.path.shape[1] < 5:
+                #     self.roles[activeidx] = 'dumb'
+                #     activebot.time_started_2b_dumb = time.time()
 
                 p0 = activebot.p0
                 p1 = self.ballEngine.getBallPose()
@@ -289,7 +289,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         # self.setMotorVelocities(0, 0)
                         activeidx = not activeidx
 
-                self.idash.plotframe()
+                # self.idash.plotframe()
 
 if __name__ == '__main__':
     import sys
