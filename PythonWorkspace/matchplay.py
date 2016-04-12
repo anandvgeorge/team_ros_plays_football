@@ -113,18 +113,6 @@ class Player(base_robot.BaseRobotRunner):
         vRobot = v2PosB(self.getRobotConf(self.bot), np.array(self.ballEngine.getBallPose()) + 0.1*(np.random.rand(2)-0.5),20)
         self.setMotorVelocities(vRobot[0], vRobot[1])
 
-# class Goalie(base_robot.BaseRobotRunner):
-#     def __init__(self, *args, **kwargs):
-#         """init for Goalie robot"""
-#         super(Goalie, self).__init__(*args, **kwargs)
-#         self.goalposition = 0.65
-#         if self.color == 'Red':
-#             self.goalposition *= -1
-
-#     def robotCode(self, *args, **kwargs):
-#         """inner while loop for Goalie robot"""
-#         self.keepGoal(self.getRobotConf(self.bot), self.goalposition)
-
 class Dumb(base_robot.BaseRobotRunner):
     def __init__(self, *args, **kwargs):
         """init for Dumb robot"""
@@ -182,19 +170,13 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                 activebot = self.bots[activeidx]
 
                 offense = self.originalRoles[activeidx] == 'attacker'
-                print '1. Print:',
-                print self.roles,
-                print offense
+                print self.roles
                 if offense:
                     if self.roles[1] != 'dumb':
                         self.roles[1] = 'attacker'
                 else:
                     if self.roles[1] != 'dumb':
                         self.roles[1] = 'midfielder'
-                    print 'FUCK YOU STUPID'
-
-                print '2. Print:',
-                print self.roles
 
                 secondaryidx = not activeidx
 
@@ -209,8 +191,7 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                     if dist < distance2ball:
                         distance2ball = dist
                         closestRobot = i
-                print closestRobot
-                #secondaryidxHasPosX = closestRobot == secondaryidx 
+
                 for idx in range(len(self.bots[:-1])):
                     if offense:
                         if idx == closestRobot:
