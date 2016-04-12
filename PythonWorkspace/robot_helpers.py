@@ -72,7 +72,7 @@ def v2Pos(robotConf, finalPos, v = 20, k=3.5, rb=0.03):
     # transformation to robot frame
     cos = math.cos(robotConf[2]) # robot orientation unique vector
     sin = math.sin(robotConf[2])
-    rvt = -cos*vx-sin*vy   # robot translational velocity ~~> ohmega 
+    rvt = -cos*vx-sin*vy   # robot translational velocity ~~> ohmega
     rvf = -sin*vx+cos*vy   # robot forward velocity
     return [rvf, k*rvt]   # robot velocity (forward, transaltional)
 
@@ -92,14 +92,14 @@ def v2PosP(robotConf, finalPos, vmax=20, k=2, kp=400):
     if v>vmax:
         v=vmax
     return v2PosB(robotConf, finalPos, v, k, rb=0.01)
-    
+
 def v2orientation(robotConf, finalConf, v = 20, k=3.5, rb=0.05, kr=15):
-    """ return a velocity vector to achieve the 
-        given desired final position: finalPos[0]=x, finalPos[1]=y 
-        robotConf[0]=x, robotConf[1]=y, robotConf[2]=theta 
-        v is the absolute velocity of the robot and 
-        k is the rotation gain 
-        rb radius of the buffer zone 
+    """ return a velocity vector to achieve the
+        given desired final position: finalPos[0]=x, finalPos[1]=y
+        robotConf[0]=x, robotConf[1]=y, robotConf[2]=theta
+        v is the absolute velocity of the robot and
+        k is the rotation gain
+        rb radius of the buffer zone
         kr is the proportionnal coeff for the rotation"""
     tol = 0.001
     if ((robotConf[0]-finalConf[0])**2+(robotConf[1]-finalConf[1])**2)**0.5>rb:
@@ -108,13 +108,13 @@ def v2orientation(robotConf, finalConf, v = 20, k=3.5, rb=0.05, kr=15):
     # -- old computation of angular difference
     # theta = finalConf[2]-robotConf[2]-math.pi/2
     # if math.fabs(theta)>math.pi:
-    #     theta=2*math.pi-theta   
+    #     theta=2*math.pi-theta
 
     # -- non buggy computation of angular difference
     theta = ThetaRange.angleDiff(finalConf[2]-math.pi/2, robotConf[2])
 
     if math.fabs(theta)<tol:
-        return (0,0)     
+        return (0,0)
     return (0, kr*k*theta)   # robot velocity (forward, transaltional)
 
 def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025):
@@ -147,16 +147,16 @@ def smoothPath(robotConf, finalConf, r=0.08, q=0.08, theta=math.pi/10, rb=0.025)
     else:
         c = c2
         gamma = math.pi/2  # clockwise
-    b1 = math.atan2(c[1,0]-s[1,0], c[0,0]-s[0,0])   # atan2(y, x)      
+    b1 = math.atan2(c[1,0]-s[1,0], c[0,0]-s[0,0])   # atan2(y, x)
     if np.linalg.norm(s-c)<r+tol:   # robot inside the circle, no solution for tangeant
         t = g-np.array([[1.5*q*cos],        # last point on the circle
                         [1.5*q*sin]])
-        path = np.concatenate((t, g1), axis=1)        
+        path = np.concatenate((t, g1), axis=1)
         status=2
         return path, status
-    path = np.concatenate((t, g1), axis=1)    
-    d = np.linalg.norm(s-c)    
-    sgnG = np.sign(gamma) 
+    path = np.concatenate((t, g1), axis=1)
+    d = np.linalg.norm(s-c)
+    sgnG = np.sign(gamma)
     b2 = math.asin(r/d)*sgnG
     p = c+np.array([[r*np.cos(b1+b2+gamma)],    # first point on the circle
                   [r*np.sin(b1+b2+gamma)]])
@@ -224,8 +224,8 @@ def passPath(robotConf, ballPos, finalBallPos, vmax=25, vr=15, r=0.08, kq=0.002,
         # add a line between the ball and the finalBallPos to the path
         path = np.column_stack((path[:,:-1], linePathBefore, path[:,-1], linePathAfter))
     if (status==0):
-        path[-1, 0]=vmax 
-        path[-1, 1]=vmax    
+        path[-1, 0]=vmax
+        path[-1, 1]=vmax
     return path, status
 
 def calculatePathTime(path, kv=66.65):     #kv=66.65=vmot/vrobot
@@ -330,17 +330,17 @@ def force_repulsion(k_repulse, rho, rho_0):
 def aim(goaliePosition, ownColor):
     ballRadius = 0.05
     leftGoalPost = [0.2, 0.75] # position of left goal post
-    rightGoalPost = [-0.2, 0.75]# position of right goal post       
+    rightGoalPost = [-0.2, 0.75]# position of right goal post
     tolerance = 0.01
     sign = 1
     gapRight = abs(goaliePosition[0] - rightGoalPost[0])
     gapLeft = abs(goaliePosition[0] - leftGoalPost[0])
-    
+
     if gapRight >= gapLeft:
         xAim = rightGoalPost[0] + ballRadius + tolerance
     else:
         xAim = leftGoalPost[0] - ballRadius - tolerance
-    
+
     if ownColor == 'Blue':
         sign = -1
     return [xAim, 0.75*sign]

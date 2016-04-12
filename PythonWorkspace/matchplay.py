@@ -213,14 +213,14 @@ class Master(base_robot.MultiRobotCyclicExecutor):
                         if idx == secondaryidx:
                             if self.bots[idx].color == 'Red':
                                 passivePos = [ballPosX, 0.2, 0]
-                            else: 
+                            else:
                                 passivePos = [ballPosX, -0.2, 0]
                             self.bots[idx].secondaryCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(secondaryidx),
                                 passivePos=passivePos)
                         # primary defender (original defender being active)
-                        else: 
+                        else:
                             self.bots[idx].robotCode(
                                 role=self.roles[idx],
                                 obstacleConfs=self.getObstacleConfs(activeidx),

@@ -115,22 +115,22 @@ class BallEngine:
 #            t0 = self.T*math.log(cte)
         t0 = 0
         return k0, t0
-        
+
     def getVelocity(self):
         # return the velocity vector of the current ball position
         dt=self.t-self.tm1
-        if (dt>0.00001): 
+        if (dt>0.00001):
             return ((self.pos[0]-self.posm1[0])/dt,(self.pos[1]-self.posm1[1])/dt)
         dt=self.t-self.tm2
         if (dt>0.00001):
             return ((self.pos[0]-self.posm2[0])/dt,(self.pos[1]-self.posm2[1])/dt)
         return (0,0)
-            
+
     def getSimTime(self):
         """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
 #        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
-        t=time.time()        
+        t=time.time()
         return t
 
 
@@ -153,7 +153,7 @@ class BaseRobotRunner(object):
         self.bot_nameStriker = 'Red1'
         self.vm=self.v=0
         self.tv=self.tvm=0
-        
+
         # run startup methods
         if clientID is not None:
             # Use existing clientID (multi robot case)
@@ -304,7 +304,7 @@ class BaseRobotRunner(object):
             self.clientID,self.leftMotor,vl,vrep.simx_opmode_streaming ) # set left wheel velocity
         _ = vrep.simxSetJointTargetVelocity(
             self.clientID,self.rightMotor,vr,vrep.simx_opmode_streaming ) # set right wheel velocity
-        
+
     def repulsion_vectors_compute(self, lidarValues, k_repulse=10.0):
         numLidarValues = len(lidarValues)
         lidarAngles = [np.pi / numLidarValues * index for index in range(numLidarValues)]
@@ -317,18 +317,18 @@ class BaseRobotRunner(object):
         """ radius of the buffer zone
         """
         robotpos = np.array(robotConf)[0:2]
-        
+
         if status==2 and self.path.shape[1]==2 and np.linalg.norm(robotpos - self.path[0:2,0])<rb:
-            # print 'path'            
+            # print 'path'
             # print self.path
-            theta = math.atan2(self.path[1,-1]-self.path[1,0], self.path[0,-1]-self.path[0,0])            
+            theta = math.atan2(self.path[1,-1]-self.path[1,0], self.path[0,-1]-self.path[0,0])
             finalConf = (self.path[0,0], self.path[1,0],theta)
             # print 'finalConf'
             # print finalConf
             vRobot = v2orientation(robotConf, finalConf)
             self.setMotorVelocities(vRobot[0], vRobot[1])
             if vRobot[1]==0:
-                self.path = self.path[:, 1:]    
+                self.path = self.path[:, 1:]
             return 2
         while self.path.shape[1]>1 and np.linalg.norm(robotpos - self.path[0:2,0])<rb :
             self.path = self.path[:, 1:]  # remove first node
@@ -338,14 +338,14 @@ class BaseRobotRunner(object):
             vRobot = v2Pos(robotConf, self.path[0:2,0], self.path[2,0], k)
             self.setMotorVelocities(vRobot[0], vRobot[1])
             return 1
-            
+
     def keepGoal(self,robotConf, y=0.7,vmax=30, goalLim=0.2): # 0.7 for left goal, -0.7 for right goal
         """ the robot keep the goal by staying on a line and focusing on ball displacement """
-        tol=0.0001        
-        self.ballEngine.update()  
+        tol=0.0001
+        self.ballEngine.update()
         pm = self.ballEngine.posm2              # previous position
         p = self.ballEngine.getBallPose()       # position
-        if math.fabs(p[1]-pm[1])<tol:       
+        if math.fabs(p[1]-pm[1])<tol:
             finalPos=[0,y]
             vRobot = v2PosB(robotConf, finalPos)
             self.setMotorVelocities(vRobot[0], vRobot[1])
@@ -353,8 +353,8 @@ class BaseRobotRunner(object):
         if y*(p[1]-pm[1])<0:
             self.setMotorVelocities(0, 0)
             return 0
-        a = (y-pm[1])/(p[1]-pm[1])  # intersection: (x,y)^t = pm+a(p-pm) 
-        x = pm[0]+a*(p[0]-pm[0])  
+        a = (y-pm[1])/(p[1]-pm[1])  # intersection: (x,y)^t = pm+a(p-pm)
+        x = pm[0]+a*(p[0]-pm[0])
         if (x>goalLim):
             x = goalLim
         if (x<-goalLim):
@@ -365,31 +365,31 @@ class BaseRobotRunner(object):
         return 0
 
     def keepGoal2(self, robotConf, Gy=0.72, vmax=25, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
-        """ the robot keep the goal by staying on an ellipse and focusing on ball position 
+        """ the robot keep the goal by staying on an ellipse and focusing on ball position
             configuration of the robot, princial axis of the ellipse, center of the goal """
-#        self.ballEngine.update()  
+#        self.ballEngine.update()
         bp = self.ballEngine.getBallPose()  # ball position
         a=math.atan2(bp[0],Gy-bp[1])
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
         vRobot = v2PosB(robotConf, rp, vmax)
-        self.setMotorVelocities(vRobot[0], vRobot[1])            
+        self.setMotorVelocities(vRobot[0], vRobot[1])
 
     def keepGoalP(self, robotConf, Gy=0.72, vmax=40, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
-        """ the robot keep the goal with a P controller by staying on an ellipse and focusing on ball position 
+        """ the robot keep the goal with a P controller by staying on an ellipse and focusing on ball position
             configuration of the robot, princial axis of the ellipse, center of the goal """
-#        self.ballEngine.update()  
+#        self.ballEngine.update()
         bp = self.ballEngine.getBallPose()  # ball position
         a=math.atan2(bp[0],Gy-bp[1])
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
         vRobot = v2PosP(robotConf, rp, vmax)
-        self.setMotorVelocities(vRobot[0], vRobot[1])  
+        self.setMotorVelocities(vRobot[0], vRobot[1])
         time.sleep(0.001)
 
     def v2PosA(self, robotConf, finalPos, vmax=40, k=2, kp=400, amax=100):
         """v2pos with acceleration bounded """
         x = finalPos[0] - robotConf[0]
         y = finalPos[1] - robotConf[1]
-        norm = (x**2 + y**2)**.5    # euclidian norm      
+        norm = (x**2 + y**2)**.5    # euclidian norm
         tv=self.ballEngine.getSimTime()
         v=kp*norm
         if v>vmax:
@@ -404,7 +404,7 @@ class BaseRobotRunner(object):
         print 'v'
         print v
         return v2PosB(robotConf, finalPos, v, k, rb=0.01)
-        
+
     def add_to_path(self, path_objective):
         """ path objective is array-like, shape (3,-1) """
         path_objective = np.asarray(path_objective).reshape(3, -1)
@@ -469,7 +469,7 @@ class BaseRobotRunner(object):
 
         if proximity < 0.001:
             self.path = None
-        
+
     def unittestMoveForward(self):
         self.setMotorVelocities(forward_vel=1, omega=0)
 
