@@ -15,7 +15,7 @@ import threading
 from idash import IDash
 from robot_helpers import (vomega2bytecodes, ThetaRange, v2Pos, v2orientation,
     interpolatePath, obstacleDetector, avoidObstacle, prox_sens_initialize,
-    prox_sens_read, force_repulsion, v2PosB, smoothPath)
+    prox_sens_read, force_repulsion, v2PosB, smoothPath, v2PosP)
 from plot_helpers import plotVector
 
 z = 0.027536552399396896 # z-Position of robot
@@ -64,7 +64,7 @@ class BallEngine:
         self.posm1 = self.pos
         self.tm1 = self.t
         self.pos = self.getBallPose()
-        self.t = time.time() # self.getSimTime()
+        self.t = self.getSimTime()
 
     def getDeltaPos(self):
         """ returns the change in position, as a XY vector """
@@ -129,7 +129,8 @@ class BallEngine:
     def getSimTime(self):
         """ CURRENTLY BROKEN; problem, sometimes returns the same time from
         multiple calls, resulting in t, tm1, and tm2 being equal """
-        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
+#        t = vrep.simxGetFloatSignal(self.clientID, 'simTime', vrep.simx_opmode_buffer)[1]
+        t=time.time()        
         return t
 
 
@@ -150,7 +151,9 @@ class BaseRobotRunner(object):
         self.color = color
         self.bot_name = '%s%d' % (color, number)
         self.bot_nameStriker = 'Red1'
-
+        self.vm=self.v=0
+        self.tv=self.tvm=0
+        
         # run startup methods
         if clientID is not None:
             # Use existing clientID (multi robot case)
@@ -371,6 +374,37 @@ class BaseRobotRunner(object):
         rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
         vRobot = v2PosB(robotConf, rp, 0.9*vmax)
         self.setMotorVelocities(vRobot[0], vRobot[1])            
+
+    def keepGoalP(self, robotConf, Gy=0.72, vmax=40, Ex=0.18, Ey=0.07): # 0.72 for left goal, -0.72 for right goal
+        """ the robot keep the goal with a P controller by staying on an ellipse and focusing on ball position 
+            configuration of the robot, princial axis of the ellipse, center of the goal """
+#        self.ballEngine.update()  
+        bp = self.ballEngine.getBallPose()  # ball position
+        a=math.atan2(bp[0],Gy-bp[1])
+        rp=(Ex*math.sin(a), Gy-Ey*math.cos(a))   # desired robot position
+        vRobot = v2PosP(robotConf, rp, vmax)
+        self.setMotorVelocities(vRobot[0], vRobot[1])  
+        time.sleep(0.001)
+
+    def v2PosA(self, robotConf, finalPos, vmax=40, k=2, kp=400, amax=100):
+        """v2pos with acceleration bounded """
+        x = finalPos[0] - robotConf[0]
+        y = finalPos[1] - robotConf[1]
+        norm = (x**2 + y**2)**.5    # euclidian norm      
+        tv=self.ballEngine.getSimTime()
+        v=kp*norm
+        if v>vmax:
+            v=vmax
+        va=math.fabs(self.vm)+amax*(tv-self.tvm)
+        print 'va'
+        print va
+        if v>va:
+            v=va
+        self.tvm=tv
+        self.vm=v
+        print 'v'
+        print v
+        return v2PosB(robotConf, finalPos, v, k, rb=0.01)
         
     def add_to_path(self, path_objective):
         """ path objective is array-like, shape (3,-1) """

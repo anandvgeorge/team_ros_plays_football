@@ -83,6 +83,16 @@ def v2PosB(robotConf, finalPos, v = 20, k=2, rb=0.03):
         V[1]=-V[1]
     return V
 
+def v2PosP(robotConf, finalPos, vmax=30, k=2, kp=400):
+    """v2pos with P controller """
+    x = finalPos[0] - robotConf[0]
+    y = finalPos[1] - robotConf[1]
+    norm = (x**2 + y**2)**.5    # euclidian norm
+    v=kp*norm
+    if v>vmax:
+        v=vmax
+    return v2PosB(robotConf, finalPos, v, k, rb=0.01)
+    
 def v2orientation(robotConf, finalConf, v = 20, k=3.5, rb=0.05, kr=15):
     """ return a velocity vector to achieve the 
         given desired final position: finalPos[0]=x, finalPos[1]=y 
