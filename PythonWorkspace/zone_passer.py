@@ -81,7 +81,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
         # start ball at zone 4 - 1 (0 indexed)
         ball_start = self.zone_centers[:,3]
         ball_start[1] -= 0.05 # move closer to players center, but further distance q from player
-        self.ballEngine.setBallPose(ball_start)
+        # self.ballEngine.setBallPose(ball_start)
         self.ballEngine.update()
 
         # FIXME: Hardcoded is good for drill, not good for game!
