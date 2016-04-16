@@ -263,9 +263,9 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                     bot_states[rcvbot_idx] = STATE_READY_POS
 
                 # -- STATE MACHINE EXECUTE
-                    _, proximitySensors = rcvbot.senseObstacles()
-                    if bot_states[rcvbot_idx] == STATE_READY_POS:
-                        rcvbot.receiveBall(proximitySensors)
+                    # _, proximitySensors = rcvbot.senseObstacles()
+                    # if bot_states[rcvbot_idx] == STATE_READY_POS:
+                    #     rcvbot.receiveBall(proximitySensors)
                     #     rcvp1 = np.array(rcvbot.getRobotConf()[:2])
                     #     rcvp2 = self.zone_corners[:, rcvzone - 1]
                     #     # not yet in position
@@ -311,7 +311,7 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         obstacleConf = [self.oppBots[i].getRobotConf() for i in range(len(self.oppBots))]
                         obstacleConf.extend([self.bots[i].getRobotConf() for i in range(len(self.bots)) if i != activebot_idx])
                         for i in xrange(len(obstacleConf)):
-                            activebot.obstacleAwarePath(obstacleConf[i],0.07)
+                            activebot.obstacleAwarePath(obstacleConf[i],0.05)
 
                         # avoid the wall boundaries
                         activebot.prunePath()
@@ -340,43 +340,19 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                             plt.xlabel('active path length: {}'.format(activebot.path.shape[1]))
                         self.idash.add(vizBots)
                         executing[activebot_idx] = True
-                    if first_loop:
-                        pass
-                        first_loop = False
-                    else:
-                        print "Elapsed (MS): ", (time.time() - time_start) * 1e3
 
                     # Edit the path based on the ball movement
-                    self.ballEngine.update()
-                    deltaxy = np.array(self.ballEngine.getVelocity())
-                    print "deltaxy: ", deltaxy
-                    for idx in range(activebot.path.shape[1]):
-                        gamma = 1 # no decay
-                        # gamma = 1 / idx # decay factor
-                        activebot.path[:2,-(idx+1)] += gamma*deltaxy*10
+                    # self.ballEngine.update()
+                    # deltaxy = np.array(self.ballEngine.getVelocity())
+                    # print "deltaxy: ", deltaxy
+                    # for idx in range(activebot.path.shape[1]):
+                    #     gamma = 1 # no decay
+                    #     # gamma = 1 / idx # decay factor
+                    #     activebot.path[:2,-(idx+1)] += gamma*deltaxy*10
 
                     # Follow the path
                     activebot.robotCode(rb=0.05, pause_before_kick=activebot.pause_before_kick)
                     # activebot.robotCode(rb=0.05, pause_before_kick=False)
-
-                    # Do measurements, whether pass was successful and state changes
-                    time_start = time.time()
-                    p1 = self.ballEngine.getBallPose()
-                    p3 = self.ballEngine.getNextRestPos()
-                    dist_from_start = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
-                    dist_from_goal = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
-                    velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
-                    closest_zone = self.getClosestZone(p1)
-                    # if dist_from_start > 0.01: # the ball has been touched
-                    if True:
-                         # if velocity_measure < 0.003: # wait til velocity reaches zero
-                         if velocity_measure < 1.0: # start kicking while ball is moving...
-                         # if dist_from_goal < 0.1: # wait til the ball has entered the predicted zone
-                            executing = [False] * len(self.bots) # everyone has new roles, plan next pass
-                            if closest_zone == rcvzone: # success
-                                # increment what is the new active zone
-                                activebot.setMotorVelocities(0,0)
-                                activezone_idx += 1
 
                 if bot_states[activebot_idx] == STATE_SHOOT:
                     if not executing[activebot_idx]:
@@ -384,6 +360,10 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         ballRestPos = self.ballEngine.getBallPose()
                         finalBallPos = self.calculateShootingDestination()
                         activebot.path, status = passPath(activeRobotConf, ballRestPos, finalBallPos, vmax=25, vr=15, kq=0.0010, hold=True)
+                        activebot.prunePath()
+                        obstacleConfs = self.getObstacleConfs([activebot_idx])
+                        activebot.multiObstacleAwarePath(obstacleConfs, 0.05)
+                        activebot.prunePath()
                         executing[activebot_idx] = True
                     activebot.robotCode()
                     def vizShooting():
@@ -396,6 +376,33 @@ class ZonePasserMasterCyclic(base_robot.MultiRobotCyclicExecutor):
                         plt.title('SHOOT!!!!')
                     self.idash.add(vizShooting)
 
+                if first_loop:
+                    pass
+                    first_loop = False
+                else:
+                    pass
+                    print "Elapsed (MS): ", (time.time() - time_start) * 1e3
+
+                # Do measurements, whether pass was successful and state changes
+                time_start = time.time()
+                p1 = self.ballEngine.getBallPose()
+                p3 = self.ballEngine.getNextRestPos()
+                dist_from_start = np.sqrt((p1[0] - p0[0])**2 + (p1[1] - p0[1])**2)
+                # dist_from_goal = np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+                # velocity_measure = np.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2)
+                vx, vy = self.ballEngine.getVelocity()
+                velocity_measure = np.sqrt(vx**2 + vy**2)
+                print velocity_measure
+                # self.idash.add(lambda: plt.plot(velocity_measure))
+                closest_zone = self.getClosestZone(p1)
+                if dist_from_start > 0.01: # the ball has been touched
+                     if velocity_measure < 0.003: # wait til velocity reaches zero
+                         # if dist_from_goal < 0.1: # wait til the ball has entered the predicted zone
+                        executing = [False] * len(self.bots) # everyone has new roles, plan next pass
+                        if closest_zone == rcvzone: # success
+                            # increment what is the new active zone
+                            activebot.setMotorVelocities(0,0)
+                            activezone_idx += 1
 
                 self.idash.plotframe() # ~100 ms shaved by removing this line
                 # time.sleep(50*1e-3)
